@@ -12,7 +12,7 @@ class HBTF(pyc.Cycle):
     def initialize(self):
         # Initialize the model here by setting option variables such as a switch for design vs off-des cases
         self.options.declare(
-            "throttle_mode", default="T4", values=["T4", "percent_thrust"]
+            "throttle_mode", default="T4", values=["T4", "thrust"]
         )
 
         super().initialize()
@@ -33,10 +33,17 @@ class HBTF(pyc.Cycle):
             self.options["thermo_data"] = pyc.species_data.janaf
             FUEL_TYPE = "Jet-A(g)"
 
-        # Add subsystems to build the engine deck:
+        # -----------------
+        #  ADD COMPONENTS
+        # -----------------
+
+        # Flight Conditions
         self.add_subsystem("fc", pyc.FlightConditions())
+        
+        # Inlet
         self.add_subsystem("inlet", pyc.Inlet())
 
+        # Fan
         # Note variable promotion for the fan --
         # the LP spool speed and the fan speed are INPUTS that are promoted:
         # Note here that promotion aliases are used. Here Nmech is being aliased to LP_Nmech
@@ -46,14 +53,20 @@ class HBTF(pyc.Cycle):
             pyc.Compressor(map_data=pyc.FanMap, bleed_names=[], map_extrap=True),
             promotes_inputs=[("Nmech", "LP_Nmech")],
         )
+        
+        # Splitter
         self.add_subsystem("splitter", pyc.Splitter())
+        # Ducts
         self.add_subsystem("duct4", pyc.Duct())
+        # LPC
         self.add_subsystem(
             "lpc",
             pyc.Compressor(map_data=pyc.LPCMap, map_extrap=True),
             promotes_inputs=[("Nmech", "LP_Nmech")],
         )
         self.add_subsystem("duct6", pyc.Duct())
+        # HPC
+        # Bleeds named: "cool1", "cool2", "cust" etc. for demonstration
         self.add_subsystem(
             "hpc",
             pyc.Compressor(
@@ -63,8 +76,11 @@ class HBTF(pyc.Cycle):
             ),
             promotes_inputs=[("Nmech", "HP_Nmech")],
         )
+        # A bleed-out to do additional bleeds out of HPC discharge
         self.add_subsystem("bld3", pyc.BleedOut(bleed_names=["cool3", "cool4"]))
+        # Combustor
         self.add_subsystem("burner", pyc.Combustor(fuel_type=FUEL_TYPE))
+        # HPT
         self.add_subsystem(
             "hpt",
             pyc.Turbine(
@@ -73,6 +89,7 @@ class HBTF(pyc.Cycle):
             promotes_inputs=[("Nmech", "HP_Nmech")],
         )
         self.add_subsystem("duct11", pyc.Duct())
+        # LPT
         self.add_subsystem(
             "lpt",
             pyc.Turbine(
@@ -81,19 +98,23 @@ class HBTF(pyc.Cycle):
             promotes_inputs=[("Nmech", "LP_Nmech")],
         )
         self.add_subsystem("duct13", pyc.Duct())
+        # Core Nozzle
         self.add_subsystem("core_nozz", pyc.Nozzle(nozzType="CV", lossCoef="Cv"))
 
+        # Bypass Bleed -> Bypass Nozzle
         self.add_subsystem("byp_bld", pyc.BleedOut(bleed_names=["bypBld"]))
         self.add_subsystem("duct15", pyc.Duct())
         self.add_subsystem("byp_nozz", pyc.Nozzle(nozzType="CV", lossCoef="Cv"))
 
         # Create shaft instances. Note that LP shaft has 3 ports! => no gearbox
+        # Shafts
         self.add_subsystem(
             "lp_shaft", pyc.Shaft(num_ports=3), promotes_inputs=[("Nmech", "LP_Nmech")]
         )
         self.add_subsystem(
             "hp_shaft", pyc.Shaft(num_ports=2), promotes_inputs=[("Nmech", "HP_Nmech")]
         )
+        # Performance group
         self.add_subsystem("perf", pyc.Performance(num_nozzles=2, num_burners=1))
         # --- Compute Fan Diameter from Exit Area ---
         self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
@@ -106,6 +127,9 @@ class HBTF(pyc.Cycle):
 
         # Now use the explicit connect method to make connections -- connect(<from>, <to>)
 
+        # -----------------------------------
+        # CONNECT FLOWS AND SHAFTS/PERFORMANCE
+        # -----------------------------------
         # Connect fan exit area to calculation
         self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
         
@@ -144,6 +168,10 @@ class HBTF(pyc.Cycle):
 
         balance = self.add_subsystem("balance", om.BalanceComp())
         if design:
+            #
+            # DESIGN POINT BALANCES
+            #
+            # 1) Solve for W to hit a desired net thrust.
             balance.add_balance("W", units="lbm/s", eq_units="lbf")
             # Here balance.W is implicit state variable that is the OUTPUT of balance object
             self.connect(
@@ -154,11 +182,13 @@ class HBTF(pyc.Cycle):
             )  # This statement makes perf.Fn the LHS of the balance eqn.
             self.promotes("balance", inputs=[("rhs:W", "Fn_DES")])
 
+            # 2) Solve for FAR so that Tt4 matches a set max T4
             balance.add_balance("FAR", eq_units="degR", lower=1e-4, val=0.017)
             self.connect("balance.FAR", "burner.Fl_I:FAR")
             self.connect("burner.Fl_O:tot:T", "balance.lhs:FAR")
             self.promotes("balance", inputs=[("rhs:FAR", "T4_MAX")])
 
+            # 3) Solve LPT PR so net torque on LP spool = 0
             # Note that for the following two balances the mult val is set to -1 so that the NET torque is zero
             balance.add_balance(
                 "lpt_PR",
@@ -173,6 +203,7 @@ class HBTF(pyc.Cycle):
             self.connect("lp_shaft.pwr_in_real", "balance.lhs:lpt_PR")
             self.connect("lp_shaft.pwr_out_real", "balance.rhs:lpt_PR")
 
+            # 4) Solve HPT PR so net torque on HP spool = 0
             balance.add_balance(
                 "hpt_PR",
                 val=1.5,
@@ -201,33 +232,35 @@ class HBTF(pyc.Cycle):
             #
             #           (lp_Nmech)   LP spool speed to balance shaft power on the low spool
             #           (hp_Nmech)   HP spool speed to balance shaft power on the high spool
-
+            
+            # 1) Solve FAR to match a desired thrust, OR T4, or a fraction of max thrust
             if self.options["throttle_mode"] == "T4":
                 balance.add_balance("FAR", val=0.017, lower=1e-4, eq_units="degR")
                 self.connect("balance.FAR", "burner.Fl_I:FAR")
                 self.connect("burner.Fl_O:tot:T", "balance.lhs:FAR")
                 self.promotes("balance", inputs=[("rhs:FAR", "T4_MAX")])
 
-            elif self.options["throttle_mode"] == "percent_thrust":
+            elif self.options["throttle_mode"] == "thrust":
                 balance.add_balance(
-                    "FAR", val=0.017, lower=1e-4, eq_units="lbf", use_mult=True
-                )
+                    "FAR", val=0.017, lower=1e-4, eq_units="lbf")
                 self.connect("balance.FAR", "burner.Fl_I:FAR")
-                self.connect("perf.Fn", "balance.rhs:FAR")
-                self.promotes(
-                    "balance", inputs=[("mult:FAR", "PC"), ("lhs:FAR", "Fn_max")]
-                )
+                self.connect("perf.Fn", "balance.lhs:FAR")
+                self.promotes('balance', inputs=[('rhs:FAR', 'Fn_target')])
 
+            # 2) Solve W to match the core nozzle area from design
             balance.add_balance(
                 "W", units="lbm/s", lower=10.0, upper=1000.0, eq_units="inch**2"
             )
             self.connect("balance.W", "fc.W")
             self.connect("core_nozz.Throat:stat:area", "balance.lhs:W")
 
+            # 3) Solve bypass ratio so that bypass nozzle area matches design
             balance.add_balance("BPR", lower=2.0, upper=10.0, eq_units="inch**2")
             self.connect("balance.BPR", "splitter.BPR")
             self.connect("byp_nozz.Throat:stat:area", "balance.lhs:BPR")
+            # We'll connect design's bypass nozzle area to 'rhs:BPR' in MPhbtf
 
+            # 4) Solve spool speeds to get net torque = 0 on each spool
             # Again for the following two balances the mult val is set to -1 so that the NET torque is zero
             balance.add_balance(
                 "lp_Nmech",

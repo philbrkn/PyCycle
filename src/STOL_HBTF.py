@@ -1,20 +1,29 @@
 # Description: This file contains the Multi-Point Turbofan Cycle Model
 import pycycle.api as pyc
+import openmdao.api as om
 
-from src.HBTF import HBTF
+from HBTF import HBTF
 from design_parameters import (
     ENGINE_DEFAULTS,
     DEFAULT_MN_VALUES,
-    OFF_DESIGN_SETTINGS,
 )
 
 
 class MPhbtf(pyc.MPCycle):
+    """
+    Multi-point HPC Turbofan:
+    * One design point: CRZ
+    * Multiple off-design: RTO, LDG, LHR, etc.
+    """
 
     def setup(self):
         # Create an instace of the High Bypass ratio Turbofan
         # Define CRZ as the Design Point
-        self.pyc_add_pnt("CRZ", HBTF(thermo_method="CEA"))
+        self.pyc_add_pnt(
+            "CRZ",
+            HBTF(thermo_method="CEA"),
+            promotes_inputs=[("fan.PR", "fan:PRdes"), ("lpc.PR", "lpc:PRdes")],
+        )
 
         # --- Set Engine Settings from `design_parameters.py` ---
         for comp, value in ENGINE_DEFAULTS.items():
@@ -23,7 +32,7 @@ class MPhbtf(pyc.MPCycle):
                 "Fn_DES": "lbf",
                 "fc.alt": "ft",
                 "LP_Nmech": "rpm",
-                "HP_Nmech": "rpm"
+                "HP_Nmech": "rpm",
             }.get(comp, None)
 
             if units:
@@ -72,23 +81,52 @@ class MPhbtf(pyc.MPCycle):
         self.pyc_add_cycle_param("lpt.cool2:frac_P", 0.0)
         self.pyc_add_cycle_param("hp_shaft.HPX", 250.0, units="hp")
 
-        # --- Off-Design Performance Cases --- #
-        for od_pt, settings in OFF_DESIGN_SETTINGS.items():
-            self.pyc_add_pnt(od_pt, HBTF(design=False, thermo_method="CEA", throttle_mode="T4" if od_pt == "OD_full_pwr" else "percent_thrust"))
-            for param, value in settings.items():
-                if param == "T4_MAX" or param == "fc.dTs":
-                    self.set_input_defaults(f"{od_pt}.{param}", value, units="degR")
-                elif param == "fc.alt":
-                    self.set_input_defaults(f"{od_pt}.{param}", value, units="ft")
-                else:
-                    self.set_input_defaults(f"{od_pt}.{param}", value)
+        # Suppose inside your MPhbtf setup() you have:
+        self.od_pts = ["RTO", "LDG"]  # , "LHR"]
+        # self.od_MNs = [0.25, 0.15, 0.6]
+        # self.od_alts = [0.0, 0.0, 15000.0]
+        # self.od_dTs = [27.0, 10.0, 0.0]
 
-        self.connect("OD_full_pwr.perf.Fn", "OD_part_pwr.Fn_max")
+        for i, pt in enumerate(self.od_pts):
+            # Add this off-design point using your single-point model
+            self.pyc_add_pnt(
+                pt,
+                HBTF(
+                    design=False,
+                    thermo_method="CEA",
+                    throttle_mode="T4" if pt == "RTO" else "T4",
+                ),
+            )
+            # Now set the inputs for each point
+            # self.set_input_defaults(f"{pt}.fc.MN", val=self.od_MNs[i])
+            # self.set_input_defaults(f"{pt}.fc.alt", val=self.od_alts[i], units="ft")
+            # self.set_input_defaults(f"{pt}.fc.dTs", val=self.od_dTs[i], units="degR")
+
+        # If you want to fix FAR at RTO to achieve 22800 lbf thrust, for example:
+        # self.set_input_defaults("RTO.balance.rhs:FAR", 22800.0, units="lbf")
 
         self.pyc_use_default_des_od_conns()
 
         # Set up the RHS of the balances!
-        self.pyc_connect_des_od("core_nozz.Throat:stat:area", "balance.rhs:W")
-        self.pyc_connect_des_od("byp_nozz.Throat:stat:area", "balance.rhs:BPR")
+        # self.pyc_connect_des_od("core_nozz.Throat:stat:area", "balance.rhs:W")
+        # self.pyc_connect_des_od("byp_nozz.Throat:stat:area", "balance.rhs:BPR")
+
+        initial_order = ["CRZ", "RTO", "LDG"]  #, "LHR"]
+        self.set_order(initial_order)
+
+        newton = self.nonlinear_solver = om.NewtonSolver()
+        newton.options["atol"] = 1e-4
+        newton.options["rtol"] = 1e-4
+        newton.options["iprint"] = 2
+        newton.options["maxiter"] = 40
+        newton.options["solve_subsystems"] = True
+        newton.options["max_sub_solves"] = 10
+        newton.options["err_on_non_converge"] = True
+        newton.options["reraise_child_analysiserror"] = False
+        newton.linesearch = om.BoundsEnforceLS()
+        newton.linesearch.options["bound_enforcement"] = "scalar"
+        newton.linesearch.options["iprint"] = -1
+
+        self.linear_solver = om.DirectSolver(assemble_jac=True)
 
         super().setup()

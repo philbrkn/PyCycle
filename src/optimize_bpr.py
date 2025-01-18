@@ -17,12 +17,11 @@ def BPR_Optimization_Model():
     to minimize TSFC while maintaining thrust and fan diameter constraints.
     """
     prob = om.Problem()
+    
+    # -----------
+    # 1) Make model
+    # -----------
     prob.model = MPhbtf()
-
-    # Add a Balance component to adjust W (flow rate) to match the required thrust
-    bal = prob.model.add_subsystem('bal', om.BalanceComp())
-    bal.add_balance('BPR', val=7.5, units=None, eq_units=None)  # Initial BPR guess
-    prob.model.connect('bal.BPR', 'DESIGN.splitter.BPR')
 
     # Optimization Driver
     prob.driver = om.ScipyOptimizeDriver()
