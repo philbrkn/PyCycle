@@ -379,8 +379,8 @@ class MPhbtf(pyc.MPCycle):
         self.set_input_defaults('OD_TOfail.fc.dTs', 0., units='degR') # Standard day
         self.set_input_defaults('OD_TOfail.T4_MAX', 1850., units='degK') # Allow higher TET for takeoff, based on your notes
         # Calculate thrust required for one engine to meet STOL performance after failure of another
-        # self.set_input_defaults('OD_TOfail.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
-        # self.add_constraint('OD_TOfail.perf.Fn', lower=50000.0)  # Minimum thrust constraint (example value)
+        # self.set_input_defaults('OD_TOfail.Fn_DES', 0000.0, units='lbf') # Example - Replace with your calculation
+        # self.add_constraint('OD_TOfail.perf.Fn', lower=30000.0)  # Minimum thrust constraint (example value)
 
         # # Takeoff (all engines operating)
         # self.set_input_defaults('OD_TO.fc.MN', 0.18)
@@ -433,9 +433,9 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.fc.MN', 0.74)
 
     prob.set_val('DESIGN.fan.PR', 1.3)
-    prob.set_val('DESIGN.lpc.PR', 3)
+    prob.set_val('DESIGN.lpc.PR', 2.6)
     prob.set_val('DESIGN.hpc.PR', 9.0)
-    prob.set_val('DESIGN.splitter.BPR', 10)
+    prob.set_val('DESIGN.splitter.BPR', 6)
 
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
@@ -445,15 +445,18 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.lpt.eff', 0.8996)
 
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 5900.0, units='lbf')
+    prob.set_val('DESIGN.Fn_DES', 2500.0, units='lbf')
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 300.
+    prob['DESIGN.balance.W'] = 500.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
     prob['DESIGN.fc.balance.Tt'] = 440.0
+    
+    # prob.model.add_constraint('DESIGN.fan.Fl_O:stat:area', lower=4300, upper=5000, units='inch**2') # Example values
+    # prob.set_val('DESIGN.fan.Fl_O:stat:area', 4400, units='inch**2')
 
     # --- Off-Design Points ---
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
@@ -490,12 +493,12 @@ if __name__ == "__main__":
     for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
         prob[pt+'.balance.FAR'] = 0.02467
-        prob[pt+'.balance.W'] = 400
-        prob[pt+'.balance.BPR'] = 5.105
+        prob[pt+'.balance.W'] = 100
+        prob[pt+'.balance.BPR'] = 6
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
         prob[pt+'.hpt.PR'] = 3.
-        prob[pt+'.lpt.PR'] = 4.
+        prob[pt+'.lpt.PR'] = 2.
         prob[pt+'.fan.map.RlineMap'] = 2.0
         prob[pt+'.lpc.map.RlineMap'] = 2.0
         prob[pt+'.hpc.map.RlineMap'] = 2.0
