@@ -31,8 +31,8 @@ def BPR_Optimization_Model():
 
     # Design Variables (what the optimizer changes)
     prob.model.add_design_var('DESIGN.splitter.BPR', lower=5.0, upper=12.0)  # Optimize BPR
-    prob.model.add_design_var('DESIGN.fan.PR', lower=1.2, upper=1.7)  # Optimize fan PR
-    prob.model.add_design_var('DESIGN.lpc.PR', lower=2.0, upper=4.0)  # Optimize LPC PR
+    prob.model.add_design_var('DESIGN.fan:PRdes', lower=1.2, upper=1.7)  # Optimize fan PR
+    prob.model.add_design_var('DESIGN.lpc:PRdes', lower=2.0, upper=4.0)  # Optimize LPC PR
     prob.model.add_design_var('DESIGN.hpc.PR', lower=8.0, upper=20.0)  # Optimize HPC PR
 
     # Objective Function (what the optimizer minimizes)
@@ -52,18 +52,32 @@ if __name__ == "__main__":
     prob.setup()
 
     # Set initial conditions (similar to what was done in run_simulation.py)
-    prob.set_val("DESIGN.fc.alt", 28000.0, units="ft")  # Cruise altitude
-    prob.set_val("DESIGN.fc.MN", 0.74)  # Cruise Mach number
-    prob.set_val("DESIGN.T4_MAX", 2880.0, units="degR")  # Turbine entry temperature
-    prob.set_val("DESIGN.Fn_DES", 5900.0, units="lbf")  # Design thrust
+
+    prob.set_val('DESIGN.fan.PR', 1.685)
+    prob.set_val('DESIGN.fan.eff', 0.8948)
+
+    prob.set_val('DESIGN.lpc.PR', 1.935)
+    prob.set_val('DESIGN.lpc.eff', 0.9243)
+
+    prob.set_val('DESIGN.hpc.PR', 9.369)
+    prob.set_val('DESIGN.hpc.eff', 0.8707)
+    
+    prob.set_val('DESIGN.hpt.eff', 0.8888)
+    prob.set_val('DESIGN.lpt.eff', 0.8996)
+    
+    prob.set_val('DESIGN.fc.alt', 35000., units='ft')
+    prob.set_val('DESIGN.fc.MN', 0.8)
+    
+    prob.set_val('DESIGN.T4_MAX', 2857, units='degR')
+    prob.set_val('DESIGN.Fn_DES', 5900.0, units='lbf') 
 
     # Set initial guesses
-    prob["DESIGN.balance.FAR"] = 0.025
-    prob["DESIGN.balance.W"] = 100.0
-    prob["DESIGN.balance.lpt_PR"] = 4.0
-    prob["DESIGN.balance.hpt_PR"] = 3.0
-    prob["DESIGN.fc.balance.Pt"] = 5.2
-    prob["DESIGN.fc.balance.Tt"] = 440.0
+    prob['DESIGN.balance.FAR'] = 0.025
+    prob['DESIGN.balance.W'] = 100.
+    prob['DESIGN.balance.lpt_PR'] = 4.0
+    prob['DESIGN.balance.hpt_PR'] = 3.0
+    prob['DESIGN.fc.balance.Pt'] = 5.2
+    prob['DESIGN.fc.balance.Tt'] = 440.0
 
     st = time.time()
     prob.set_solver_print(level=-1)

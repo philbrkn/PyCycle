@@ -53,7 +53,6 @@ class HBTF(pyc.Cycle):
             pyc.Compressor(map_data=pyc.FanMap, bleed_names=[], map_extrap=True),
             promotes_inputs=[("Nmech", "LP_Nmech")],
         )
-        
         # Splitter
         self.add_subsystem("splitter", pyc.Splitter())
         # Ducts
@@ -121,6 +120,13 @@ class HBTF(pyc.Cycle):
                             area={'val':7000.0, 'units':'inch**2'},
                             hub_tip={'val':0.3125, 'units':None},
                             FanDia={'val':100.0, 'units':'inch'}))
+
+        # self.add_subsystem('opr_calc', om.ExecComp('OPR_simple = FPR*LPCPR*HPCPR',
+        #                         FPR={'val':1.3, 'units':None},
+        #                         LPCPR={'val':3.0, 'units':None},
+        #                         HPCPR={'val':14.0, 'units':None},
+        #                         OPR_simple={'val':55.0, 'units':None}))
+
 
         # order_add = ['fan_dia', 'opr_calc']
         # self.set_order(order_add)
@@ -216,6 +222,7 @@ class HBTF(pyc.Cycle):
             self.connect("balance.hpt_PR", "hpt.PR")
             self.connect("hp_shaft.pwr_in_real", "balance.lhs:hpt_PR")
             self.connect("hp_shaft.pwr_out_real", "balance.rhs:hpt_PR")
+
 
         else:
 

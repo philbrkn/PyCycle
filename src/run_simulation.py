@@ -33,11 +33,11 @@ if __name__ == "__main__":
             units = entry["units"]
             prob.set_val(f"{od_pt}.{param}", val, units=units if units else None)
 
-    # for od_pt, guesses in OFF_DESIGN_BALANCE_GUESSES.items():
-    #     for param, entry in guesses.items():
-    #         val = entry["val"]
-    #         units = entry["units"]
-    #         prob.set_val(f"{od_pt}.{param}", val, units=units if units else None)
+    for od_pt, guesses in OFF_DESIGN_BALANCE_GUESSES.items():
+        for param, entry in guesses.items():
+            val = entry["val"]
+            units = entry["units"]
+            prob.set_val(f"{od_pt}.{param}", val, units=units if units else None)
 
     st = time.time()
 
