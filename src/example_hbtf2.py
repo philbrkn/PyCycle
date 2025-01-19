@@ -70,12 +70,12 @@ class HBTF(pyc.Cycle):
         self.add_subsystem('perf', pyc.Performance(num_nozzles=2, num_burners=1))
         
         # FAN AREA
-        self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
-                    area={'val':7000.0, 'units':'inch**2'},
-                    hub_tip={'val':0.3125, 'units':None},
-                    FanDia={'val':100.0, 'units':'inch'}))
-        # Now use the explicit connect method to make connections -- connect(<from>, <to>)
-        self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
+        # self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
+        #             area={'val':7000.0, 'units':'inch**2'},
+        #             hub_tip={'val':0.3125, 'units':None},
+        #             FanDia={'val':100.0, 'units':'inch'}))
+        # # Now use the explicit connect method to make connections -- connect(<from>, <to>)
+        # self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
 
         # Define the velocity ratio equation: vel_ratio = Vcore / Vbypass
         self.add_subsystem('vel_ratio_calc', om.ExecComp('vel_ratio = core_V / bypass_V',
@@ -145,9 +145,9 @@ class HBTF(pyc.Cycle):
             self.connect('hp_shaft.pwr_in_real', 'balance.lhs:hpt_PR')
             self.connect('hp_shaft.pwr_out_real', 'balance.rhs:hpt_PR')
 
-            balance.add_balance('BPR', lower=2., upper=10., eq_units='inch**2')
-            self.connect('balance.BPR', 'splitter.BPR')
-            self.connect('byp_nozz.Throat:stat:area', 'balance.lhs:BPR')
+            # balance.add_balance('BPR', lower=2., upper=10., eq_units='inch**2')
+            # self.connect('balance.BPR', 'splitter.BPR')
+            # self.connect('byp_nozz.Throat:stat:area', 'balance.lhs:BPR')
 
         else:
             
@@ -170,13 +170,6 @@ class HBTF(pyc.Cycle):
                 self.connect('balance.FAR', 'burner.Fl_I:FAR')
                 self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR')
                 self.promotes('balance', inputs=[('rhs:FAR', 'T4_MAX')])
-
-            elif self.options['throttle_mode'] == 'percent_thrust': 
-                balance.add_balance('FAR', val=0.017, lower=1e-4, eq_units='lbf', use_mult=True)
-                self.connect('balance.FAR', 'burner.Fl_I:FAR')
-                self.connect('perf.Fn', 'balance.rhs:FAR')
-                self.promotes('balance', inputs=[('mult:FAR', 'PC'), ('lhs:FAR', 'Fn_max')])
-
 
             balance.add_balance('W', units='lbm/s', lower=10., upper=2000., eq_units='inch**2')
             self.connect('balance.W', 'fc.W')
@@ -323,11 +316,10 @@ class MPhbtf(pyc.MPCycle):
         self.set_input_defaults('DESIGN.T4_MAX', 1600., units='degK') # Initial TET based on your notes
 
         # Set the default value for vel_ratio_target at the top level
-        # self.add_constraint('DESIGN.vel_ratio_calc.vel_ratio', lower=1.1, upper=1.3)
+        # self.set_input_defaults('DESIGN.splitter.BPR', 5.105)
 
-        self.set_input_defaults('DESIGN.inlet.MN', 0.751)
+        self.set_input_defaults('DESIGN.inlet.MN', 0.701)
         self.set_input_defaults('DESIGN.fan.MN', 0.4578)
-        self.set_input_defaults('DESIGN.splitter.BPR', 5.105)
         self.set_input_defaults('DESIGN.splitter.MN1', 0.3104)
         self.set_input_defaults('DESIGN.splitter.MN2', 0.4518)
         self.set_input_defaults('DESIGN.duct4.MN', 0.3121)
@@ -364,7 +356,7 @@ class MPhbtf(pyc.MPCycle):
         self.pyc_add_cycle_param('hpc.cool2:frac_P', 0.55)
         self.pyc_add_cycle_param('hpc.cool2:frac_work', 0.5)
         self.pyc_add_cycle_param('bld3.cool3:frac_W', 0.067214)
-        self.pyc_add_cycle_param('bld3.cool4:frac_W', 0.101256)
+        self.pyc_add_cycle_param('bld3.cool4:frac_W', 0.061256) # MAKING LOWER
         self.pyc_add_cycle_param('hpc.cust:frac_P', 0.5)
         self.pyc_add_cycle_param('hpc.cust:frac_work', 0.5)
         self.pyc_add_cycle_param('hpc.cust:frac_W', 0.0445)
@@ -377,7 +369,7 @@ class MPhbtf(pyc.MPCycle):
         self.od_pts = ['OD_TOfail', 'OD_TO', 'OD_TOC', 'OD_LDG']
 
         self.pyc_add_pnt('OD_TOfail', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
-        self.pyc_add_pnt('OD_TO', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
+        # self.pyc_add_pnt('OD_TO', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_TOC', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_LDG', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         
@@ -390,13 +382,13 @@ class MPhbtf(pyc.MPCycle):
         # self.set_input_defaults('OD_TOfail.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
         # self.add_constraint('OD_TOfail.perf.Fn', lower=50000.0)  # Minimum thrust constraint (example value)
 
-        # Takeoff (all engines operating)
-        self.set_input_defaults('OD_TO.fc.MN', 0.18)
-        self.set_input_defaults('OD_TO.fc.alt', 0., units='ft')
-        self.set_input_defaults('OD_TO.fc.dTs', 0., units='degR')
-        self.set_input_defaults('OD_TO.T4_MAX', 1850., units='degK')
-        # self.set_input_defaults('OD_TO.Fn_DES', 25000.0, units='lbf')
-        # self.add_constraint('OD_TO.perf.Fn', lower=40000.0)  # Minimum thrust constraint (example value)
+        # # Takeoff (all engines operating)
+        # self.set_input_defaults('OD_TO.fc.MN', 0.18)
+        # self.set_input_defaults('OD_TO.fc.alt', 0., units='ft')
+        # self.set_input_defaults('OD_TO.fc.dTs', 0., units='degR')
+        # self.set_input_defaults('OD_TO.T4_MAX', 1850., units='degK')
+        # # self.set_input_defaults('OD_TO.Fn_DES', 25000.0, units='lbf')
+        # # self.add_constraint('OD_TO.perf.Fn', lower=40000.0)  # Minimum thrust constraint (example value)
 
         # Top-of-climb
         # self.set_input_defaults('OD_TOC.fc.MN', 0.7)
@@ -415,7 +407,7 @@ class MPhbtf(pyc.MPCycle):
 
         self.pyc_use_default_des_od_conns()
 
-        #Set up the RHS of the balances!
+        # #Set up the RHS of the balances!
         self.pyc_connect_des_od('core_nozz.Throat:stat:area','balance.rhs:W')
         self.pyc_connect_des_od('byp_nozz.Throat:stat:area','balance.rhs:BPR')
 
@@ -433,28 +425,33 @@ if __name__ == "__main__":
 
     prob.setup()
 
-    prob.set_val('DESIGN.fan.PR', 1.7)
+    # velo ratio
+    # prob.set_val('DESIGN.vel_ratio_calc.vel_ratio', 1.2)
+    # prob.model.add_constraint('DESIGN.vel_ratio_calc.vel_ratio', lower=1.1, upper=1.3)
+
+    prob.set_val('DESIGN.fc.alt', 28000., units='ft')
+    prob.set_val('DESIGN.fc.MN', 0.74)
+
+    prob.set_val('DESIGN.fan.PR', 1.3)
     prob.set_val('DESIGN.lpc.PR', 3)
-    prob.set_val('DESIGN.hpc.PR', 12.0)
-    prob.set_val('DESIGN.splitter.BPR', 8)
+    prob.set_val('DESIGN.hpc.PR', 9.0)
+    prob.set_val('DESIGN.splitter.BPR', 10)
+
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
-    prob.set_val('DESIGN.hpc.eff', 0.8707)
+    prob.set_val('DESIGN.hpc.eff', 0.907)
 
     prob.set_val('DESIGN.hpt.eff', 0.8888)
     prob.set_val('DESIGN.lpt.eff', 0.8996)
 
-    prob.set_val('DESIGN.fc.alt', 35000., units='ft')
-    prob.set_val('DESIGN.fc.MN', 0.8)
-
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 5900.0, units='lbf') 
+    prob.set_val('DESIGN.Fn_DES', 5900.0, units='lbf')
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
     prob['DESIGN.balance.W'] = 300.
     prob['DESIGN.balance.lpt_PR'] = 4.0
-    prob['DESIGN.balance.hpt_PR'] = 3.0
+    prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
     prob['DESIGN.fc.balance.Tt'] = 440.0
 
@@ -465,15 +462,16 @@ if __name__ == "__main__":
     prob.set_val('OD_TOfail.fc.dTs', 0.0, units='degR')
     prob.set_val('OD_TOfail.T4_MAX', 1850., units='degK')
     # prob.set_val('OD_TOfail.Fn_DES', 66000.0, units='lbf') # Example - Replace with your calculation
-    prob.model.add_constraint("OD_TOfail.Fn_DES", lower=66000.0, units='lbf')  # must be >= 22000
+    # prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000.0, units='lbf')  # must be >= 22000
+    # prob.model.add_constraint("OD_TOfail.Fn_DES", lower=30000.0, units='lbf')  # must be >= 22000
 
     # Takeoff (all engines operating)
-    prob.set_val('OD_TO.fc.MN', 0.18)
-    prob.set_val('OD_TO.fc.alt', 0.0, units='ft')
-    prob.set_val('OD_TO.fc.dTs', 0.0, units='degR')
-    prob.set_val('OD_TO.T4_MAX', 1850., units='degK')
-    # prob.set_val('OD_TO.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
-    prob.model.add_constraint("OD_TO.Fn_DES", lower=50000.0, units='lbf')  # must be >= 22000
+    # prob.set_val('OD_TO.fc.MN', 0.18)
+    # prob.set_val('OD_TO.fc.alt', 0.0, units='ft')
+    # prob.set_val('OD_TO.fc.dTs', 0.0, units='degR')
+    # prob.set_val('OD_TO.T4_MAX', 1850., units='degK')
+    # # prob.set_val('OD_TO.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
+    # prob.model.add_constraint("OD_TO.Fn_DES", lower=20000.0, units='lbf')  # must be >= 22000
 
     # Top-of-climb
     # prob.set_val('OD_TOC.fc.MN', 0.7)
@@ -489,10 +487,10 @@ if __name__ == "__main__":
     # prob.set_val('OD_LDG.T4_MAX', 1600., units='degK')
     # # prob.set_val('OD_LDG.Fn_DES', 5000.0, units='lbf') # Example - Replace with your calculation
 
-    for pt in ['OD_TOfail', 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
+    for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
         prob[pt+'.balance.FAR'] = 0.02467
-        prob[pt+'.balance.W'] = 800
+        prob[pt+'.balance.W'] = 400
         prob[pt+'.balance.BPR'] = 5.105
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
@@ -516,8 +514,8 @@ if __name__ == "__main__":
     print("OD_TOfail Point")
     viewer(prob, 'OD_TOfail', file=viewer_file)
 
-    print("OD_TO Point")
-    viewer(prob, 'OD_TO', file=viewer_file)
+    # print("OD_TO Point")
+    # viewer(prob, 'OD_TO', file=viewer_file)
 
     # print("OD_TOC Point")
     # viewer(prob, 'OD_TOC', file=viewer_file)
