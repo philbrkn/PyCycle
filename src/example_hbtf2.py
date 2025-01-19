@@ -68,9 +68,24 @@ class HBTF(pyc.Cycle):
         self.add_subsystem('lp_shaft', pyc.Shaft(num_ports=3),promotes_inputs=[('Nmech','LP_Nmech')])
         self.add_subsystem('hp_shaft', pyc.Shaft(num_ports=2),promotes_inputs=[('Nmech','HP_Nmech')])
         self.add_subsystem('perf', pyc.Performance(num_nozzles=2, num_burners=1))
-    
-        # Now use the explicit connect method to make connections -- connect(<from>, <to>)
         
+        # FAN AREA
+        self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
+                    area={'val':7000.0, 'units':'inch**2'},
+                    hub_tip={'val':0.3125, 'units':None},
+                    FanDia={'val':100.0, 'units':'inch'}))
+        # Now use the explicit connect method to make connections -- connect(<from>, <to>)
+        self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
+
+        # Define the velocity ratio equation: vel_ratio = Vcore / Vbypass
+        self.add_subsystem('vel_ratio_calc', om.ExecComp('vel_ratio = core_V / bypass_V',
+                                                        core_V={'units': 'ft/s'},
+                                                        bypass_V={'units': 'ft/s'},
+                                                        vel_ratio={'units': None}))
+        # Connect nozzle exit velocities to velocity ratio calculator
+        self.connect('core_nozz.Fl_O:stat:V', 'vel_ratio_calc.core_V')
+        self.connect('byp_nozz.Fl_O:stat:V', 'vel_ratio_calc.bypass_V')
+
         #Connect the inputs to perf group
         self.connect('inlet.Fl_O:tot:P', 'perf.Pt2')
         self.connect('hpc.Fl_O:tot:P', 'perf.Pt3')
@@ -163,7 +178,7 @@ class HBTF(pyc.Cycle):
                 self.promotes('balance', inputs=[('mult:FAR', 'PC'), ('lhs:FAR', 'Fn_max')])
 
 
-            balance.add_balance('W', units='lbm/s', lower=10., upper=1000., eq_units='inch**2')
+            balance.add_balance('W', units='lbm/s', lower=10., upper=2000., eq_units='inch**2')
             self.connect('balance.W', 'fc.W')
             self.connect('core_nozz.Throat:stat:area', 'balance.lhs:W')
 
@@ -307,6 +322,9 @@ class MPhbtf(pyc.MPCycle):
         self.set_input_defaults('DESIGN.fc.MN', 0.8)  # Typical cruise Mach number
         self.set_input_defaults('DESIGN.T4_MAX', 1600., units='degK') # Initial TET based on your notes
 
+        # Set the default value for vel_ratio_target at the top level
+        # self.add_constraint('DESIGN.vel_ratio_calc.vel_ratio', lower=1.1, upper=1.3)
+
         self.set_input_defaults('DESIGN.inlet.MN', 0.751)
         self.set_input_defaults('DESIGN.fan.MN', 0.4578)
         self.set_input_defaults('DESIGN.splitter.BPR', 5.105)
@@ -355,43 +373,44 @@ class MPhbtf(pyc.MPCycle):
         self.pyc_add_cycle_param('lpt.cool1:frac_P', 1.0)
         self.pyc_add_cycle_param('lpt.cool2:frac_P', 0.0)
         self.pyc_add_cycle_param('hp_shaft.HPX', 250.0, units='hp')
-        
-        
+
         self.od_pts = ['OD_TOfail', 'OD_TO', 'OD_TOC', 'OD_LDG']
 
         self.pyc_add_pnt('OD_TOfail', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         self.pyc_add_pnt('OD_TO', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
-        self.pyc_add_pnt('OD_TOC', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
-        self.pyc_add_pnt('OD_LDG', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
+        # self.pyc_add_pnt('OD_TOC', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
+        # self.pyc_add_pnt('OD_LDG', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         
         # Single-engine failure during takeoff
-        self.set_input_defaults('OD_TOfail.fc.MN', 0.2)
+        self.set_input_defaults('OD_TOfail.fc.MN', 0.18)
         self.set_input_defaults('OD_TOfail.fc.alt', 0., units='ft')
         self.set_input_defaults('OD_TOfail.fc.dTs', 0., units='degR') # Standard day
         self.set_input_defaults('OD_TOfail.T4_MAX', 1850., units='degK') # Allow higher TET for takeoff, based on your notes
         # Calculate thrust required for one engine to meet STOL performance after failure of another
         # self.set_input_defaults('OD_TOfail.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
+        # self.add_constraint('OD_TOfail.perf.Fn', lower=50000.0)  # Minimum thrust constraint (example value)
 
         # Takeoff (all engines operating)
-        self.set_input_defaults('OD_TO.fc.MN', 0.2)
+        self.set_input_defaults('OD_TO.fc.MN', 0.18)
         self.set_input_defaults('OD_TO.fc.alt', 0., units='ft')
         self.set_input_defaults('OD_TO.fc.dTs', 0., units='degR')
         self.set_input_defaults('OD_TO.T4_MAX', 1850., units='degK')
         # self.set_input_defaults('OD_TO.Fn_DES', 25000.0, units='lbf')
+        # self.add_constraint('OD_TO.perf.Fn', lower=40000.0)  # Minimum thrust constraint (example value)
 
         # Top-of-climb
-        self.set_input_defaults('OD_TOC.fc.MN', 0.7)
-        self.set_input_defaults('OD_TOC.fc.alt', 30000., units='ft') # Example climb altitude
-        self.set_input_defaults('OD_TOC.fc.dTs', 0., units='degR')
-        self.set_input_defaults('OD_TOC.T4_MAX', 1700., units='degK') # Reduce TET slightly from takeoff
-        # self.set_input_defaults('OD_TOC.Fn_DES', 30000.0, units='lbf')
+        # self.set_input_defaults('OD_TOC.fc.MN', 0.7)
+        # self.set_input_defaults('OD_TOC.fc.alt', 30000., units='ft') # Example climb altitude
+        # self.set_input_defaults('OD_TOC.fc.dTs', 0., units='degR')
+        # self.set_input_defaults('OD_TOC.T4_MAX', 1700., units='degK') # Reduce TET slightly from takeoff
+        # # self.set_input_defaults('OD_TOC.Fn_DES', 30000.0, units='lbf')
 
-        # Landing
-        self.set_input_defaults('OD_LDG.fc.MN', 0.2)
-        self.set_input_defaults('OD_LDG.fc.alt', 0., units='ft')
-        self.set_input_defaults('OD_LDG.fc.dTs', 0., units='degR')
-        self.set_input_defaults('OD_LDG.T4_MAX', 1600., units='degK') # Lower TET for landing
-        # self.set_input_defaults('OD_LDG.Fn_DES', 5000.0, units='lbf')
+        # # Landing
+        # self.set_input_defaults('OD_LDG.fc.MN', 0.2)
+        # self.set_input_defaults('OD_LDG.fc.alt', 0., units='ft')
+        # self.set_input_defaults('OD_LDG.fc.dTs', 0., units='degR')
+        # self.set_input_defaults('OD_LDG.T4_MAX', 1600., units='degK') # Lower TET for landing
+        # # self.set_input_defaults('OD_LDG.Fn_DES', 5000.0, units='lbf')
 
 
         self.pyc_use_default_des_od_conns()
@@ -399,6 +418,7 @@ class MPhbtf(pyc.MPCycle):
         #Set up the RHS of the balances!
         self.pyc_connect_des_od('core_nozz.Throat:stat:area','balance.rhs:W')
         self.pyc_connect_des_od('byp_nozz.Throat:stat:area','balance.rhs:BPR')
+
 
         super().setup()
 
@@ -413,27 +433,26 @@ if __name__ == "__main__":
 
     prob.setup()
 
-    prob.set_val('DESIGN.fan.PR', 1.5)
-    prob.set_val('DESIGN.lpc.PR', 2)
-    prob.set_val('DESIGN.hpc.PR', 11.0)
-    prob.set_val('DESIGN.splitter.BPR', 5.5)
-
+    prob.set_val('DESIGN.fan.PR', 1.7)
+    prob.set_val('DESIGN.lpc.PR', 3)
+    prob.set_val('DESIGN.hpc.PR', 12.0)
+    prob.set_val('DESIGN.splitter.BPR', 8)
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
     prob.set_val('DESIGN.hpc.eff', 0.8707)
-    
+
     prob.set_val('DESIGN.hpt.eff', 0.8888)
     prob.set_val('DESIGN.lpt.eff', 0.8996)
-    
-    prob.set_val('DESIGN.fc.alt', 28000., units='ft')
-    prob.set_val('DESIGN.fc.MN', 0.74)
-    
+
+    prob.set_val('DESIGN.fc.alt', 35000., units='ft')
+    prob.set_val('DESIGN.fc.MN', 0.8)
+
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
     prob.set_val('DESIGN.Fn_DES', 5900.0, units='lbf') 
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 100.
+    prob['DESIGN.balance.W'] = 300.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 3.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
@@ -441,37 +460,39 @@ if __name__ == "__main__":
 
     # --- Off-Design Points ---
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
-    prob.set_val('OD_TOfail.fc.MN', 0.2)
+    prob.set_val('OD_TOfail.fc.MN', 0.18)
     prob.set_val('OD_TOfail.fc.alt', 0.0, units='ft')
     prob.set_val('OD_TOfail.fc.dTs', 0.0, units='degR')
     prob.set_val('OD_TOfail.T4_MAX', 1850., units='degK')
-    # prob.set_val('OD_TOfail.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
-    
+    # prob.set_val('OD_TOfail.Fn_DES', 66000.0, units='lbf') # Example - Replace with your calculation
+    prob.model.add_constraint("OD_TOfail.Fn_DES", lower=66000.0, units='lbf')  # must be >= 22000
+
     # Takeoff (all engines operating)
-    prob.set_val('OD_TO.fc.MN', 0.2)
+    prob.set_val('OD_TO.fc.MN', 0.18)
     prob.set_val('OD_TO.fc.alt', 0.0, units='ft')
     prob.set_val('OD_TO.fc.dTs', 0.0, units='degR')
     prob.set_val('OD_TO.T4_MAX', 1850., units='degK')
-    # prob.set_val('OD_TO.Fn_DES', 25000.0, units='lbf') # Example - Replace with your calculation
-    
-    # Top-of-climb
-    prob.set_val('OD_TOC.fc.MN', 0.7)
-    prob.set_val('OD_TOC.fc.alt', 30000., units='ft')
-    prob.set_val('OD_TOC.fc.dTs', 0.0, units='degR')
-    prob.set_val('OD_TOC.T4_MAX', 1700., units='degK')
-    # prob.set_val('OD_TOC.Fn_DES', 30000.0, units='lbf') # Example - Replace with your calculation
-    
-    # Landing
-    prob.set_val('OD_LDG.fc.MN', 0.2)
-    prob.set_val('OD_LDG.fc.alt', 0.0, units='ft')
-    prob.set_val('OD_LDG.fc.dTs', 0.0, units='degR')
-    prob.set_val('OD_LDG.T4_MAX', 1600., units='degK')
-    # prob.set_val('OD_LDG.Fn_DES', 5000.0, units='lbf') # Example - Replace with your calculation
+    # prob.set_val('OD_TO.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
+    prob.model.add_constraint("OD_TO.Fn_DES", lower=50000.0, units='lbf')  # must be >= 22000
 
-    for pt in ['OD_TOfail', 'OD_TO', 'OD_TOC', 'OD_LDG']:
+    # Top-of-climb
+    # prob.set_val('OD_TOC.fc.MN', 0.7)
+    # prob.set_val('OD_TOC.fc.alt', 30000., units='ft')
+    # prob.set_val('OD_TOC.fc.dTs', 0.0, units='degR')
+    # prob.set_val('OD_TOC.T4_MAX', 1700., units='degK')
+    # # prob.set_val('OD_TOC.Fn_DES', 30000.0, units='lbf') # Example - Replace with your calculation
+
+    # # Landing
+    # prob.set_val('OD_LDG.fc.MN', 0.2)
+    # prob.set_val('OD_LDG.fc.alt', 0.0, units='ft')
+    # prob.set_val('OD_LDG.fc.dTs', 0.0, units='degR')
+    # prob.set_val('OD_LDG.T4_MAX', 1600., units='degK')
+    # # prob.set_val('OD_LDG.Fn_DES', 5000.0, units='lbf') # Example - Replace with your calculation
+
+    for pt in ['OD_TOfail', 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
         prob[pt+'.balance.FAR'] = 0.02467
-        prob[pt+'.balance.W'] = 300
+        prob[pt+'.balance.W'] = 800
         prob[pt+'.balance.BPR'] = 5.105
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
@@ -498,11 +519,11 @@ if __name__ == "__main__":
     print("OD_TO Point")
     viewer(prob, 'OD_TO', file=viewer_file)
 
-    print("OD_TOC Point")
-    viewer(prob, 'OD_TOC', file=viewer_file)
+    # print("OD_TOC Point")
+    # viewer(prob, 'OD_TOC', file=viewer_file)
 
-    print("OD_LDG Point")
-    viewer(prob, 'OD_LDG', file=viewer_file)
+    # print("OD_LDG Point")
+    # viewer(prob, 'OD_LDG', file=viewer_file)
 
     print()
     print("Run time", time.time() - st)

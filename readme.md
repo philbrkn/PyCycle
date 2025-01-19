@@ -1,6 +1,9 @@
 
 
- Set Core Velocity 20% Higher (Design Point):
+
+ 
+ 
+Set Core Velocity 20% Higher (Design Point):
 
 To achieve the core velocity being approximately 20% higher than the bypass velocity at the design point, you need to add a specific constraint that relates these two velocities. Here's how you can do it:
 
