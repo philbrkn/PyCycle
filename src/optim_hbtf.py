@@ -1,7 +1,3 @@
-'''
-adapted from example 1
-'''
-
 import sys
 
 import numpy as np
@@ -74,12 +70,12 @@ class HBTF(pyc.Cycle):
         self.add_subsystem('perf', pyc.Performance(num_nozzles=2, num_burners=1))
         
         # FAN AREA
-        # self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
-        #             area={'val':7000.0, 'units':'inch**2'},
-        #             hub_tip={'val':0.3125, 'units':None},
-        #             FanDia={'val':100.0, 'units':'inch'}))
-        # # Now use the explicit connect method to make connections -- connect(<from>, <to>)
-        # self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
+        self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
+                            area={'val':7000.0, 'units':'inch**2'},
+                            hub_tip={'val':0.3125, 'units':None},
+                            FanDia={'val':100.0, 'units':'inch'}))
+        # Now use the explicit connect method to make connections -- connect(<from>, <to>)
+        self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
 
         # Define the velocity ratio equation: vel_ratio = Vcore / Vbypass
         self.add_subsystem('vel_ratio_calc', om.ExecComp('vel_ratio = core_V / bypass_V',
@@ -130,7 +126,7 @@ class HBTF(pyc.Cycle):
             self.connect('balance.W', 'fc.W') #Connect the output of balance to the relevant input
             self.connect('perf.Fn', 'balance.lhs:W')       #This statement makes perf.Fn the LHS of the balance eqn.
             self.promotes('balance', inputs=[('rhs:W', 'Fn_DES')])
-
+            
             balance.add_balance('FAR', eq_units='degR', lower=1e-4, val=.017)
             self.connect('balance.FAR', 'burner.Fl_I:FAR')
             self.connect('burner.Fl_O:tot:T', 'balance.lhs:FAR')
@@ -419,14 +415,40 @@ class MPhbtf(pyc.MPCycle):
         super().setup()
 
 
+
 if __name__ == "__main__":
 
     import time
 
     prob = om.Problem()
-
     prob.model = mp_hbtf = MPhbtf()
 
+    # 1) Set up an optimizer driver
+    prob.driver = om.ScipyOptimizeDriver()
+    prob.driver.options["optimizer"] = "SLSQP"
+    prob.driver.options["maxiter"] = 50
+    prob.driver.options["debug_print"] = ["desvars", "nl_cons", "objs"]
+    # prob.driver.opt_settings={'Major step limit': 0.05}
+    # Optionally prob.driver.opt_settings = { ... } for advanced control
+
+    # 2) Add design variables
+    # Example: HPC PR, fan PR, and T4 at design
+    # HPC PR is often the product lpc.PR * hpc.PR, or you can do them individually.
+    # We'll assume HPC has a single PR.  If your code is separated, adapt accordingly.
+    # prob.model.add_design_var("DESIGN.hpc.PR", lower=6.0, upper=15.0)
+    # prob.model.add_design_var("DESIGN.fan.PR", lower=1.3, upper=1.8)
+    # prob.model.add_design_var('DESIGN.lpc.PR', lower=1.0, upper=4.0)
+    # prob.model.add_design_var('DESIGN.splitter.BPR', lower=3.0, upper=12.0)
+    prob.model.add_design_var("DESIGN.fan.PR", lower=1.3, upper=1.8)  # Fan pressure ratio
+    prob.model.add_design_var("DESIGN.splitter.BPR", lower=3.0, upper=12.0)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
+
+    prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.5)
+
+    # constraints
+    prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000., units='lbf', ref=32000)
+    prob.model.add_constraint("DESIGN.perf.Fn", lower=2500., units='lbf', ref=2600)
+    prob.model.add_constraint("DESIGN.balance.FAR", lower=0.015, upper=0.03, ref=0.025)
+    prob.model.add_constraint("DESIGN.fan_dia.FanDia", lower=75., upper=100., ref=80)
     prob.setup()
 
     # velo ratio
@@ -436,10 +458,10 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.fc.alt', 28000., units='ft')
     prob.set_val('DESIGN.fc.MN', 0.74)
 
-    prob.set_val('DESIGN.fan.PR', 1.5)
-    prob.set_val('DESIGN.lpc.PR', 2.567)
-    prob.set_val('DESIGN.hpc.PR', 8.7)
-    prob.set_val('DESIGN.splitter.BPR', 5.5)
+    prob.set_val('DESIGN.fan.PR', 1.3)
+    prob.set_val('DESIGN.lpc.PR', 2.6)
+    prob.set_val('DESIGN.hpc.PR', 9.0)
+    prob.set_val('DESIGN.splitter.BPR', 6)
 
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
@@ -449,11 +471,11 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.lpt.eff', 0.8996)
 
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 10000.0, units='lbf')
+    prob.set_val('DESIGN.Fn_DES', 2500.0, units='lbf')
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 300.
+    prob['DESIGN.balance.W'] = 900.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
@@ -497,7 +519,7 @@ if __name__ == "__main__":
     for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
         prob[pt+'.balance.FAR'] = 0.03
-        prob[pt+'.balance.W'] = 1300
+        prob[pt+'.balance.W'] = 1500
         prob[pt+'.balance.BPR'] = 6
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
@@ -513,8 +535,8 @@ if __name__ == "__main__":
     prob.set_solver_print(level=2, depth=1)
 
     viewer_file = open('hbtf_view.out', 'w')
-    prob.run_model()
-
+    prob.run_driver()
+    
     print("DESIGN Point")
     viewer(prob, 'DESIGN', file=viewer_file)
 

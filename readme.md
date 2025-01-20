@@ -1,7 +1,13 @@
 
 
 
- 
+problem: 
+- the Area is set in on design, cruise. which is small for small thrust.
+- so fails for off design high thrust. 
+
+- can try thrust scaling, switching od/ond, chaning balancing, optimizing, constraining area somehow.
+
+
  
 Set Core Velocity 20% Higher (Design Point):
 

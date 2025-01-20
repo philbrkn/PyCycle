@@ -1,5 +1,6 @@
 '''
-adapted from example 1
+switch deisgn off design
+
 '''
 
 import sys
@@ -315,29 +316,29 @@ class MPhbtf(pyc.MPCycle):
 
         self.pyc_add_pnt('DESIGN', HBTF(thermo_method='CEA')) # Create an instace of the High Bypass ratio Turbofan
 
-        self.set_input_defaults('DESIGN.fc.alt', 35000., units='ft')  # Typical cruise altitude
-        self.set_input_defaults('DESIGN.fc.MN', 0.8)  # Typical cruise Mach number
-        self.set_input_defaults('DESIGN.T4_MAX', 1600., units='degK') # Initial TET based on your notes
+        self.set_input_defaults('DESIGN.fc.alt', 0., units='ft')  # Typical cruise altitude
+        self.set_input_defaults('DESIGN.fc.MN', 0.18)  # Typical cruise Mach number
+        self.set_input_defaults('DESIGN.T4_MAX', 1850., units='degK') # Initial TET based on your notes
 
         # Set the default value for vel_ratio_target at the top level
         # self.set_input_defaults('DESIGN.splitter.BPR', 5.105)
 
-        self.set_input_defaults('DESIGN.inlet.MN', 0.701)
-        self.set_input_defaults('DESIGN.fan.MN', 0.4578)
-        self.set_input_defaults('DESIGN.splitter.MN1', 0.3104)
-        self.set_input_defaults('DESIGN.splitter.MN2', 0.4518)
-        self.set_input_defaults('DESIGN.duct4.MN', 0.3121)
-        self.set_input_defaults('DESIGN.lpc.MN', 0.3059)
-        self.set_input_defaults('DESIGN.duct6.MN', 0.3563)
-        self.set_input_defaults('DESIGN.hpc.MN', 0.2442)
-        self.set_input_defaults('DESIGN.bld3.MN', 0.3000)
-        self.set_input_defaults('DESIGN.burner.MN', 0.1025)
-        self.set_input_defaults('DESIGN.hpt.MN', 0.3650)
-        self.set_input_defaults('DESIGN.duct11.MN', 0.3063)
-        self.set_input_defaults('DESIGN.lpt.MN', 0.4127)
-        self.set_input_defaults('DESIGN.duct13.MN', 0.4463)
-        self.set_input_defaults('DESIGN.byp_bld.MN', 0.4489)
-        self.set_input_defaults('DESIGN.duct15.MN', 0.4589)
+        # self.set_input_defaults('DESIGN.inlet.MN', 0.701)
+        # self.set_input_defaults('DESIGN.fan.MN', 0.4578)
+        # self.set_input_defaults('DESIGN.splitter.MN1', 0.3104)
+        # self.set_input_defaults('DESIGN.splitter.MN2', 0.4518)
+        # self.set_input_defaults('DESIGN.duct4.MN', 0.3121)
+        # self.set_input_defaults('DESIGN.lpc.MN', 0.3059)
+        # self.set_input_defaults('DESIGN.duct6.MN', 0.3563)
+        # self.set_input_defaults('DESIGN.hpc.MN', 0.2442)
+        # self.set_input_defaults('DESIGN.bld3.MN', 0.3000)
+        # self.set_input_defaults('DESIGN.burner.MN', 0.1025)
+        # self.set_input_defaults('DESIGN.hpt.MN', 0.3650)
+        # self.set_input_defaults('DESIGN.duct11.MN', 0.3063)
+        # self.set_input_defaults('DESIGN.lpt.MN', 0.4127)
+        # self.set_input_defaults('DESIGN.duct13.MN', 0.4463)
+        # self.set_input_defaults('DESIGN.byp_bld.MN', 0.4489)
+        # self.set_input_defaults('DESIGN.duct15.MN', 0.4589)
         self.set_input_defaults('DESIGN.LP_Nmech', 4666.1, units='rpm')
         self.set_input_defaults('DESIGN.HP_Nmech', 14705.7, units='rpm')
 
@@ -372,16 +373,16 @@ class MPhbtf(pyc.MPCycle):
 
         self.od_pts = ['OD_TOfail', 'OD_TO', 'OD_TOC', 'OD_LDG']
 
-        self.pyc_add_pnt('OD_TOfail', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
+        self.pyc_add_pnt('CRZ', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_TO', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_TOC', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_LDG', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         
         # Single-engine failure during takeoff
-        self.set_input_defaults('OD_TOfail.fc.MN', 0.18)
-        self.set_input_defaults('OD_TOfail.fc.alt', 0., units='ft')
-        self.set_input_defaults('OD_TOfail.fc.dTs', 0., units='degR') # Standard day
-        self.set_input_defaults('OD_TOfail.T4_MAX', 1850., units='degK') # Allow higher TET for takeoff, based on your notes
+        self.set_input_defaults('CRZ.fc.MN', 0.78)
+        self.set_input_defaults('CRZ.fc.alt', 28000., units='ft')
+        self.set_input_defaults('CRZ.fc.dTs', 0., units='degR') # Standard day
+        self.set_input_defaults('CRZ.T4_MAX', 1600., units='degK') # Allow higher TET for takeoff, based on your notes
         # Calculate thrust required for one engine to meet STOL performance after failure of another
         # self.set_input_defaults('OD_TOfail.Fn_DES', 0000.0, units='lbf') # Example - Replace with your calculation
         # self.add_constraint('OD_TOfail.perf.Fn', lower=30000.0)  # Minimum thrust constraint (example value)
@@ -433,13 +434,13 @@ if __name__ == "__main__":
     # prob.set_val('DESIGN.vel_ratio_calc.vel_ratio', 1.2)
     # prob.model.add_constraint('DESIGN.vel_ratio_calc.vel_ratio', lower=1.1, upper=1.3)
 
-    prob.set_val('DESIGN.fc.alt', 28000., units='ft')
-    prob.set_val('DESIGN.fc.MN', 0.74)
+    prob.set_val('DESIGN.fc.alt', 0., units='ft')
+    prob.set_val('DESIGN.fc.MN', 0.18)
 
-    prob.set_val('DESIGN.fan.PR', 1.5)
-    prob.set_val('DESIGN.lpc.PR', 2.567)
-    prob.set_val('DESIGN.hpc.PR', 8.7)
-    prob.set_val('DESIGN.splitter.BPR', 5.5)
+    prob.set_val('DESIGN.fan.PR', 1.6)
+    prob.set_val('DESIGN.lpc.PR', 2.7)
+    prob.set_val('DESIGN.hpc.PR', 9.0)
+    prob.set_val('DESIGN.splitter.BPR', 5)
 
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
@@ -448,12 +449,12 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.hpt.eff', 0.8888)
     prob.set_val('DESIGN.lpt.eff', 0.8996)
 
-    prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 10000.0, units='lbf')
+    prob.set_val('DESIGN.T4_MAX', 1850, units='degK')
+    prob.set_val('DESIGN.Fn_DES', 40000.0, units='lbf')
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 300.
+    prob['DESIGN.balance.W'] = 1500.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
@@ -464,10 +465,10 @@ if __name__ == "__main__":
 
     # --- Off-Design Points ---
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
-    prob.set_val('OD_TOfail.fc.MN', 0.18)
-    prob.set_val('OD_TOfail.fc.alt', 0.0, units='ft')
-    prob.set_val('OD_TOfail.fc.dTs', 0.0, units='degR')
-    prob.set_val('OD_TOfail.T4_MAX', 1850., units='degK')
+    prob.set_val('CRZ.fc.MN', 0.78)
+    prob.set_val('CRZ.fc.alt', 28000, units='ft')
+    prob.set_val('CRZ.fc.dTs', 0.0, units='degR')
+    prob.set_val('CRZ.T4_MAX', 1600., units='degK')
     # prob.set_val('OD_TOfail.Fn_DES', 66000.0, units='lbf') # Example - Replace with your calculation
     # prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000.0, units='lbf')  # must be >= 22000
     # prob.model.add_constraint("OD_TOfail.Fn_DES", lower=30000.0, units='lbf')  # must be >= 22000
@@ -494,10 +495,10 @@ if __name__ == "__main__":
     # prob.set_val('OD_LDG.T4_MAX', 1600., units='degK')
     # # prob.set_val('OD_LDG.Fn_DES', 5000.0, units='lbf') # Example - Replace with your calculation
 
-    for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
+    for pt in ['CRZ']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
-        prob[pt+'.balance.FAR'] = 0.03
-        prob[pt+'.balance.W'] = 1300
+        prob[pt+'.balance.FAR'] = 0.02467
+        prob[pt+'.balance.W'] = 800
         prob[pt+'.balance.BPR'] = 6
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
@@ -518,8 +519,8 @@ if __name__ == "__main__":
     print("DESIGN Point")
     viewer(prob, 'DESIGN', file=viewer_file)
 
-    print("OD_TOfail Point")
-    viewer(prob, 'OD_TOfail', file=viewer_file)
+    print("CRZ Point")
+    viewer(prob, 'CRZ', file=viewer_file)
 
     # print("OD_TO Point")
     # viewer(prob, 'OD_TO', file=viewer_file)
