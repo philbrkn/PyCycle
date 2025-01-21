@@ -1,5 +1,7 @@
 
 
+need to reformulate the balance problem
+
 
 problem: 
 - the Area is set in on design, cruise. which is small for small thrust.

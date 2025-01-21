@@ -70,12 +70,12 @@ class HBTF(pyc.Cycle):
         self.add_subsystem('perf', pyc.Performance(num_nozzles=2, num_burners=1))
         
         # FAN AREA
-        # self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
-        #             area={'val':7000.0, 'units':'inch**2'},
-        #             hub_tip={'val':0.3125, 'units':None},
-        #             FanDia={'val':100.0, 'units':'inch'}))
-        # # Now use the explicit connect method to make connections -- connect(<from>, <to>)
-        # self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
+        self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
+                    area={'val':7000.0, 'units':'inch**2'},
+                    hub_tip={'val':0.3125, 'units':None},
+                    FanDia={'val':100.0, 'units':'inch'}))
+        # Now use the explicit connect method to make connections -- connect(<from>, <to>)
+        self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
 
         # Define the velocity ratio equation: vel_ratio = Vcore / Vbypass
         self.add_subsystem('vel_ratio_calc', om.ExecComp('vel_ratio = core_V / bypass_V',
@@ -426,7 +426,7 @@ if __name__ == "__main__":
     # 1) Set up an optimizer driver
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options["optimizer"] = "SLSQP"
-    prob.driver.options["maxiter"] = 50
+    prob.driver.options["maxiter"] = 3
     prob.driver.options["debug_print"] = ["desvars", "nl_cons", "objs"]
     # prob.driver.opt_settings={'Major step limit': 0.05}
     # Optionally prob.driver.opt_settings = { ... } for advanced control
@@ -435,19 +435,24 @@ if __name__ == "__main__":
     # Example: HPC PR, fan PR, and T4 at design
     # HPC PR is often the product lpc.PR * hpc.PR, or you can do them individually.
     # We'll assume HPC has a single PR.  If your code is separated, adapt accordingly.
-    # prob.model.add_design_var("DESIGN.hpc.PR", lower=6.0, upper=15.0)
-    # prob.model.add_design_var("DESIGN.fan.PR", lower=1.3, upper=1.8)
-    # prob.model.add_design_var('DESIGN.lpc.PR', lower=1.0, upper=4.0)
-    # prob.model.add_design_var('DESIGN.splitter.BPR', lower=3.0, upper=12.0)
+    prob.model.add_design_var("DESIGN.hpc.PR", lower=6.0, upper=15.0)
+    prob.model.add_design_var('DESIGN.lpc.PR', lower=2.0, upper=4.0)
     prob.model.add_design_var("DESIGN.fan.PR", lower=1.3, upper=1.8)  # Fan pressure ratio
-    prob.model.add_design_var("DESIGN.splitter.BPR", lower=3.0, upper=12.0)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
+    prob.model.add_design_var("DESIGN.splitter.BPR", lower=3.0, upper=15.0, ref=6)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
 
     prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.5)
 
     # constraints
     # prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000., units='lbf', ref=32000)
-    prob.model.add_constraint("DESIGN.perf.Fn", lower=2500., units='lbf', ref=2600)
+    # prob.model.add_constraint("DESIGN.perf.Fn", lower=5000., units='lbf', ref=5000)
     prob.model.add_constraint("DESIGN.balance.FAR", lower=0.015, upper=0.03, ref=0.025)
+    prob.model.add_constraint('DESIGN.fan_dia.FanDia', lower=70.0, upper=90, ref=80.0)
+    
+    recorder = om.SqliteRecorder('N3_opt.sql')
+    prob.model.add_recorder(recorder)
+    prob.model.recording_options['record_inputs'] = True
+    prob.model.recording_options['record_outputs'] = True
+
     prob.setup()
 
     # velo ratio
@@ -470,11 +475,11 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.lpt.eff', 0.8996)
 
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 2500.0, units='lbf')
+    prob.set_val('DESIGN.Fn_DES', 5000.0, units='lbf')
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 900.
+    prob['DESIGN.balance.W'] = 600.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
