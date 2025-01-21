@@ -171,7 +171,7 @@ class N3(pyc.Cycle):
             self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
                             area={'val':7000.0, 'units':'inch**2'},
                             hub_tip={'val':0.3125, 'units':None},
-                            FanDia={'val':100.0, 'units':'inch'}))
+                            FanDia={'val':80.0, 'units':'inch'}))
             self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
 
             self.add_subsystem('opr_calc', om.ExecComp('OPR_simple = FPR*LPCPR*HPCPR',
@@ -370,9 +370,9 @@ class MPN3(pyc.MPCycle):
         self.set_input_defaults('TOC.balance.rhs:lpt_eff', 0.93),
         self.set_input_defaults('TOC.duct5.dPqP', 0.0100),
         self.set_input_defaults('TOC.duct17.dPqP', 0.0150),
-        self.set_input_defaults('TOC.Fan_Nmech', 2184.5, units='rpm'),
-        self.set_input_defaults('TOC.LP_Nmech', 7572.0, units='rpm'),
-        self.set_input_defaults('TOC.HP_Nmech', 20871.0, units='rpm'),
+        self.set_input_defaults('TOC.Fan_Nmech', 2384.5, units='rpm'),
+        self.set_input_defaults('TOC.LP_Nmech', 8072.0, units='rpm'),
+        self.set_input_defaults('TOC.HP_Nmech', 22871.0, units='rpm'),
 
         self.set_input_defaults('TOC.inlet.MN', 0.625),
         self.set_input_defaults('TOC.fan.MN', 0.5)
@@ -416,7 +416,7 @@ class MPN3(pyc.MPCycle):
         # OTHER POINTS (OFF-DESIGN)
         self.od_pts = ['RTO']  #,'SLS','CRZ']
         self.cooling = [True, False, False]
-        self.od_MNs = [0.25, 0.000001, 0.8]
+        self.od_MNs = [0.18, 0.000001, 0.8]
         self.od_alts = [0.0, 0.0, 35000.0]
         self.od_dTs = [27.0, 27.0, 0.0]
         self.od_BPRs = [1.75, 1.75, 1.9397]
@@ -502,8 +502,8 @@ class MPN3(pyc.MPCycle):
         self.set_order(self.options['order_start'] + initial_order + self.options['order_add'])
 
         newton = self.nonlinear_solver = om.NewtonSolver()
-        newton.options['atol'] = 1e-6
-        newton.options['rtol'] = 1e-6
+        newton.options['atol'] = 1e-3
+        newton.options['rtol'] = 1e-3
         newton.options['iprint'] = 2
         newton.options['maxiter'] = 20
         newton.options['solve_subsystems'] = True
@@ -557,10 +557,11 @@ if __name__ == "__main__":
     prob.set_val('TOC.balance.rhs:hpc_PR', 53.6332)
 
     # Set up the specific cycle parameters
-    prob.set_val('fan:PRdes', 1.400),
-    prob.set_val('lpc:PRdes', 3.100),
+    prob.set_val('fan:PRdes', 1.300),
+    prob.set_val('lpc:PRdes', 3.300),
     prob.set_val('T4_ratio.TR', 0.926470588)
     prob.set_val('RTO_T4', 3400.0, units='degR')
+    prob.set_val('RTO.balance.rhs:FAR', 35000.0, units='lbf'),
     # prob.set_val('SLS.balance.rhs:FAR', 28620.84, units='lbf')
     # prob.set_val('CRZ.balance.rhs:FAR', 5510.72833567, units='lbf')
     prob.set_val('RTO.hpt_cooling.x_factor', 0.9)
@@ -573,11 +574,11 @@ if __name__ == "__main__":
     prob['TOC.fc.balance.Tt'] = 444.41
 
     FAR_guess = [0.02832, 0.02541, 0.02510]
-    W_guess = [1916.13, 1900., 802.79]
-    BPR_guess = [25.5620, 22.3467, 24.3233]
+    W_guess = [2516.13, 1900., 802.79]
+    BPR_guess = [23.5620, 22.3467, 24.3233]
     fan_Nmech_guess = [2132.6, 1953.1, 2118.7]
     lp_Nmech_guess = [6611.2, 6054.5, 6567.9]
-    hp_Nmech_guess = [22288.2, 21594.0, 20574.1]
+    hp_Nmech_guess = [24288.2, 21594.0, 20574.1]
     hpt_PR_guess = [4.210, 4.245, 4.197]
     lpt_PR_guess = [8.161, 7.001, 10.803]
     fan_Rline_guess = [1.7500, 1.7500, 1.9397]
