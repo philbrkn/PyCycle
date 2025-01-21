@@ -226,12 +226,12 @@ class HBTF(pyc.Cycle):
         
         #Specify solver settings:
         newton = self.nonlinear_solver = om.NewtonSolver()
-        newton.options['atol'] = 1e-8
+        newton.options['atol'] = 1e-6
 
         # set this very small, so it never activates and we rely on atol
         newton.options['rtol'] = 1e-99 
         newton.options['iprint'] = 2
-        newton.options['maxiter'] = 50
+        newton.options['maxiter'] = 25
         newton.options['solve_subsystems'] = True
         newton.options['max_sub_solves'] = 1000
         newton.options['reraise_child_analysiserror'] = False
@@ -322,24 +322,24 @@ class MPhbtf(pyc.MPCycle):
         # Set the default value for vel_ratio_target at the top level
         # self.set_input_defaults('DESIGN.splitter.BPR', 5.105)
 
-        self.set_input_defaults('DESIGN.inlet.MN', 0.701)
-        self.set_input_defaults('DESIGN.fan.MN', 0.4578)
-        self.set_input_defaults('DESIGN.splitter.MN1', 0.3104)
-        self.set_input_defaults('DESIGN.splitter.MN2', 0.4518)
-        self.set_input_defaults('DESIGN.duct4.MN', 0.3121)
-        self.set_input_defaults('DESIGN.lpc.MN', 0.3059)
-        self.set_input_defaults('DESIGN.duct6.MN', 0.3563)
-        self.set_input_defaults('DESIGN.hpc.MN', 0.2442)
-        self.set_input_defaults('DESIGN.bld3.MN', 0.3000)
-        self.set_input_defaults('DESIGN.burner.MN', 0.1025)
-        self.set_input_defaults('DESIGN.hpt.MN', 0.3650)
+        self.set_input_defaults('DESIGN.inlet.MN', 0.70)
+        self.set_input_defaults('DESIGN.fan.MN', 0.45)
+        self.set_input_defaults('DESIGN.splitter.MN1', 0.32)
+        self.set_input_defaults('DESIGN.splitter.MN2', 0.47)
+        self.set_input_defaults('DESIGN.duct4.MN', 0.33)
+        self.set_input_defaults('DESIGN.lpc.MN', 0.30)
+        self.set_input_defaults('DESIGN.duct6.MN', 0.35)
+        self.set_input_defaults('DESIGN.hpc.MN', 0.22)
+        self.set_input_defaults('DESIGN.bld3.MN', 0.29)
+        self.set_input_defaults('DESIGN.burner.MN', 0.1)
+        self.set_input_defaults('DESIGN.hpt.MN', 0.35)
         self.set_input_defaults('DESIGN.duct11.MN', 0.3063)
-        self.set_input_defaults('DESIGN.lpt.MN', 0.4127)
-        self.set_input_defaults('DESIGN.duct13.MN', 0.4463)
-        self.set_input_defaults('DESIGN.byp_bld.MN', 0.4489)
-        self.set_input_defaults('DESIGN.duct15.MN', 0.4589)
-        self.set_input_defaults('DESIGN.LP_Nmech', 4666.1, units='rpm')
-        self.set_input_defaults('DESIGN.HP_Nmech', 14705.7, units='rpm')
+        self.set_input_defaults('DESIGN.lpt.MN', 0.39)
+        self.set_input_defaults('DESIGN.duct13.MN', 0.42)
+        self.set_input_defaults('DESIGN.byp_bld.MN', 0.47)
+        self.set_input_defaults('DESIGN.duct15.MN', 0.49)
+        self.set_input_defaults('DESIGN.LP_Nmech', 4000, units='rpm')
+        self.set_input_defaults('DESIGN.HP_Nmech', 13000, units='rpm')
 
         # --- Set up bleed values -----
         
@@ -370,7 +370,7 @@ class MPhbtf(pyc.MPCycle):
         self.pyc_add_cycle_param('lpt.cool2:frac_P', 0.0)
         self.pyc_add_cycle_param('hp_shaft.HPX', 250.0, units='hp')
 
-        self.od_pts = ['OD_TOfail', 'OD_TO', 'OD_TOC', 'OD_LDG']
+        self.od_pts = ['OD_TOfail'] #, 'OD_TO', 'OD_TOC', 'OD_LDG']
 
         self.pyc_add_pnt('OD_TOfail', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_TO', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
@@ -436,10 +436,10 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.fc.alt', 28000., units='ft')
     prob.set_val('DESIGN.fc.MN', 0.74)
 
-    prob.set_val('DESIGN.fan.PR', 1.5)
-    prob.set_val('DESIGN.lpc.PR', 2.567)
-    prob.set_val('DESIGN.hpc.PR', 8.7)
-    prob.set_val('DESIGN.splitter.BPR', 5.5)
+    prob.set_val('DESIGN.fan.PR', 1.4)
+    prob.set_val('DESIGN.lpc.PR', 2.5)
+    prob.set_val('DESIGN.hpc.PR', 8)
+    prob.set_val('DESIGN.splitter.BPR', 5.9)
 
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
@@ -453,7 +453,7 @@ if __name__ == "__main__":
 
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 300.
+    prob['DESIGN.balance.W'] = 800.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
@@ -497,13 +497,13 @@ if __name__ == "__main__":
     for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
         prob[pt+'.balance.FAR'] = 0.03
-        prob[pt+'.balance.W'] = 1300
-        prob[pt+'.balance.BPR'] = 6
+        prob[pt+'.balance.W'] = 1400
+        prob[pt+'.balance.BPR'] = 5.3
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
         prob[pt+'.hpt.PR'] = 3.
         prob[pt+'.lpt.PR'] = 2.
-        prob[pt+'.fan.map.RlineMap'] = 2.0
+        prob[pt+'.fan.map.RlineMap'] = 2.02
         prob[pt+'.lpc.map.RlineMap'] = 2.0
         prob[pt+'.hpc.map.RlineMap'] = 2.0
 
@@ -512,14 +512,23 @@ if __name__ == "__main__":
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
-    viewer_file = open('hbtf_view.out', 'w')
+    # viewer_file = open('hbtf_view.out', 'w')
     prob.run_model()
 
-    print("DESIGN Point")
-    viewer(prob, 'DESIGN', file=viewer_file)
+    # file
+    date_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
+    # create file:
+    import os
+    os.makedirs('output_data', exist_ok=True)
+    viewer_file = open(f'output_data/hbtf2_{date_time}.out', 'w')
+    for pt in ['DESIGN']+prob.model.od_pts:
+        viewer(prob, pt, file=viewer_file)
 
-    print("OD_TOfail Point")
-    viewer(prob, 'OD_TOfail', file=viewer_file)
+    # print("DESIGN Point")
+    # viewer(prob, 'DESIGN', file=viewer_file)
+
+    # print("OD_TOfail Point")
+    # viewer(prob, 'OD_TOfail', file=viewer_file)
 
     # print("OD_TO Point")
     # viewer(prob, 'OD_TO', file=viewer_file)

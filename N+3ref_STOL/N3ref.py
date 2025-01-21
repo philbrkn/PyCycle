@@ -357,8 +357,8 @@ class MPN3(pyc.MPCycle):
                                                         ('opr_calc.FPR', 'fan:PRdes'), ('opr_calc.LPCPR', 'lpc:PRdes')])
 
         # POINT 1: Top-of-climb (TOC)
-        self.set_input_defaults('TOC.fc.alt', 35000., units='ft'),
-        self.set_input_defaults('TOC.fc.MN', 0.8),
+        self.set_input_defaults('TOC.fc.alt', 30000., units='ft'),
+        self.set_input_defaults('TOC.fc.MN', 0.74),
         self.set_input_defaults('TOC.inlet.ram_recovery', 0.9980),
 
         self.set_input_defaults('TOC.balance.rhs:fan_eff', 0.97)
@@ -374,23 +374,23 @@ class MPN3(pyc.MPCycle):
         self.set_input_defaults('TOC.LP_Nmech', 8072.0, units='rpm'),
         self.set_input_defaults('TOC.HP_Nmech', 22871.0, units='rpm'),
 
-        self.set_input_defaults('TOC.inlet.MN', 0.625),
-        self.set_input_defaults('TOC.fan.MN', 0.5)
-        self.set_input_defaults('TOC.splitter.MN1', 0.45)
-        self.set_input_defaults('TOC.splitter.MN2', 0.45)
-        self.set_input_defaults('TOC.duct2.MN', 0.45),
-        self.set_input_defaults('TOC.lpc.MN', 0.45),
-        self.set_input_defaults('TOC.bld25.MN', 0.45),
-        self.set_input_defaults('TOC.duct25.MN', 0.45),
-        self.set_input_defaults('TOC.hpc.MN', 0.30),
-        self.set_input_defaults('TOC.bld3.MN', 0.30)
-        self.set_input_defaults('TOC.burner.MN', 0.10),
-        self.set_input_defaults('TOC.hpt.MN', 0.30),
-        self.set_input_defaults('TOC.duct45.MN', 0.45),
-        self.set_input_defaults('TOC.lpt.MN', 0.35),
-        self.set_input_defaults('TOC.duct5.MN', 0.25),
-        self.set_input_defaults('TOC.byp_bld.MN', 0.45),
-        self.set_input_defaults('TOC.duct17.MN', 0.45),
+        self.set_input_defaults('TOC.inlet.MN', 0.6),
+        self.set_input_defaults('TOC.fan.MN', 0.48)
+        self.set_input_defaults('TOC.splitter.MN1', 0.44)
+        self.set_input_defaults('TOC.splitter.MN2', 0.44)
+        self.set_input_defaults('TOC.duct2.MN', 0.44),
+        self.set_input_defaults('TOC.lpc.MN', 0.44),
+        self.set_input_defaults('TOC.bld25.MN', 0.44),
+        self.set_input_defaults('TOC.duct25.MN', 0.44),
+        self.set_input_defaults('TOC.hpc.MN', 0.28),
+        self.set_input_defaults('TOC.bld3.MN', 0.28)
+        self.set_input_defaults('TOC.burner.MN', 0.09),
+        self.set_input_defaults('TOC.hpt.MN', 0.29),
+        self.set_input_defaults('TOC.duct45.MN', 0.44),
+        self.set_input_defaults('TOC.lpt.MN', 0.34),
+        self.set_input_defaults('TOC.duct5.MN', 0.24),
+        self.set_input_defaults('TOC.byp_bld.MN', 0.44),
+        self.set_input_defaults('TOC.duct17.MN', 0.44),
 
         self.pyc_add_cycle_param('burner.dPqP', 0.0400),
         self.pyc_add_cycle_param('core_nozz.Cv', 0.9999),

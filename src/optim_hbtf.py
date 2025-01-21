@@ -71,9 +71,9 @@ class HBTF(pyc.Cycle):
         
         # FAN AREA
         self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
-                            area={'val':7000.0, 'units':'inch**2'},
-                            hub_tip={'val':0.3125, 'units':None},
-                            FanDia={'val':100.0, 'units':'inch'}))
+                    area={'val':7000.0, 'units':'inch**2'},
+                    hub_tip={'val':0.3125, 'units':None},
+                    FanDia={'val':100.0, 'units':'inch'}))
         # Now use the explicit connect method to make connections -- connect(<from>, <to>)
         self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
 
@@ -86,6 +86,12 @@ class HBTF(pyc.Cycle):
         self.connect('core_nozz.Fl_O:stat:V', 'vel_ratio_calc.core_V')
         self.connect('byp_nozz.Fl_O:stat:V', 'vel_ratio_calc.bypass_V')
 
+        self.add_subsystem('opr_calc', om.ExecComp('OPR_simple = FPR*LPCPR*HPCPR',
+                        FPR={'val':1.3, 'units':None},
+                        LPCPR={'val':3.0, 'units':None},
+                        HPCPR={'val':14.0, 'units':None},
+                        OPR_simple={'val':55.0, 'units':None}))
+
         #Connect the inputs to perf group
         self.connect('inlet.Fl_O:tot:P', 'perf.Pt2')
         self.connect('hpc.Fl_O:tot:P', 'perf.Pt3')
@@ -93,7 +99,7 @@ class HBTF(pyc.Cycle):
         self.connect('inlet.F_ram', 'perf.ram_drag')
         self.connect('core_nozz.Fg', 'perf.Fg_0')
         self.connect('byp_nozz.Fg', 'perf.Fg_1')
-        
+
         #LP-shaft connections
         self.connect('fan.trq', 'lp_shaft.trq_0')
         self.connect('lpc.trq', 'lp_shaft.trq_1')
@@ -222,12 +228,12 @@ class HBTF(pyc.Cycle):
         
         #Specify solver settings:
         newton = self.nonlinear_solver = om.NewtonSolver()
-        newton.options['atol'] = 1e-8
+        newton.options['atol'] = 1e-6
 
         # set this very small, so it never activates and we rely on atol
         newton.options['rtol'] = 1e-99 
         newton.options['iprint'] = 2
-        newton.options['maxiter'] = 50
+        newton.options['maxiter'] = 25
         newton.options['solve_subsystems'] = True
         newton.options['max_sub_solves'] = 1000
         newton.options['reraise_child_analysiserror'] = False
@@ -235,7 +241,7 @@ class HBTF(pyc.Cycle):
         ls = newton.linesearch = om.ArmijoGoldsteinLS()
         ls.options['maxiter'] = 3
         ls.options['rho'] = 0.75
-        # ls.options['print_bound_enforce'] = True
+        ls.options['print_bound_enforce'] = False
 
         self.linear_solver = om.DirectSolver()
 
@@ -318,24 +324,24 @@ class MPhbtf(pyc.MPCycle):
         # Set the default value for vel_ratio_target at the top level
         # self.set_input_defaults('DESIGN.splitter.BPR', 5.105)
 
-        self.set_input_defaults('DESIGN.inlet.MN', 0.701)
-        self.set_input_defaults('DESIGN.fan.MN', 0.4578)
-        self.set_input_defaults('DESIGN.splitter.MN1', 0.3104)
-        self.set_input_defaults('DESIGN.splitter.MN2', 0.4518)
-        self.set_input_defaults('DESIGN.duct4.MN', 0.3121)
-        self.set_input_defaults('DESIGN.lpc.MN', 0.3059)
-        self.set_input_defaults('DESIGN.duct6.MN', 0.3563)
-        self.set_input_defaults('DESIGN.hpc.MN', 0.2442)
-        self.set_input_defaults('DESIGN.bld3.MN', 0.3000)
-        self.set_input_defaults('DESIGN.burner.MN', 0.1025)
-        self.set_input_defaults('DESIGN.hpt.MN', 0.3650)
+        self.set_input_defaults('DESIGN.inlet.MN', 0.70)
+        self.set_input_defaults('DESIGN.fan.MN', 0.45)
+        self.set_input_defaults('DESIGN.splitter.MN1', 0.32)
+        self.set_input_defaults('DESIGN.splitter.MN2', 0.47)
+        self.set_input_defaults('DESIGN.duct4.MN', 0.33)
+        self.set_input_defaults('DESIGN.lpc.MN', 0.30)
+        self.set_input_defaults('DESIGN.duct6.MN', 0.35)
+        self.set_input_defaults('DESIGN.hpc.MN', 0.22)
+        self.set_input_defaults('DESIGN.bld3.MN', 0.29)
+        self.set_input_defaults('DESIGN.burner.MN', 0.1)
+        self.set_input_defaults('DESIGN.hpt.MN', 0.35)
         self.set_input_defaults('DESIGN.duct11.MN', 0.3063)
-        self.set_input_defaults('DESIGN.lpt.MN', 0.4127)
-        self.set_input_defaults('DESIGN.duct13.MN', 0.4463)
-        self.set_input_defaults('DESIGN.byp_bld.MN', 0.4489)
-        self.set_input_defaults('DESIGN.duct15.MN', 0.4589)
-        self.set_input_defaults('DESIGN.LP_Nmech', 4666.1, units='rpm')
-        self.set_input_defaults('DESIGN.HP_Nmech', 14705.7, units='rpm')
+        self.set_input_defaults('DESIGN.lpt.MN', 0.39)
+        self.set_input_defaults('DESIGN.duct13.MN', 0.42)
+        self.set_input_defaults('DESIGN.byp_bld.MN', 0.47)
+        self.set_input_defaults('DESIGN.duct15.MN', 0.49)
+        self.set_input_defaults('DESIGN.LP_Nmech', 4000, units='rpm')
+        self.set_input_defaults('DESIGN.HP_Nmech', 13000, units='rpm')
 
         # --- Set up bleed values -----
         
@@ -366,7 +372,7 @@ class MPhbtf(pyc.MPCycle):
         self.pyc_add_cycle_param('lpt.cool2:frac_P', 0.0)
         self.pyc_add_cycle_param('hp_shaft.HPX', 250.0, units='hp')
 
-        self.od_pts = ['OD_TOfail', 'OD_TO', 'OD_TOC', 'OD_LDG']
+        self.od_pts = ['OD_TOfail'] #, 'OD_TO', 'OD_TOC', 'OD_LDG']
 
         self.pyc_add_pnt('OD_TOfail', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
         # self.pyc_add_pnt('OD_TO', HBTF(design=False, thermo_method='CEA', throttle_mode='T4'))
@@ -378,24 +384,18 @@ class MPhbtf(pyc.MPCycle):
         self.set_input_defaults('OD_TOfail.fc.alt', 0., units='ft')
         self.set_input_defaults('OD_TOfail.fc.dTs', 0., units='degR') # Standard day
         self.set_input_defaults('OD_TOfail.T4_MAX', 1850., units='degK') # Allow higher TET for takeoff, based on your notes
-        # Calculate thrust required for one engine to meet STOL performance after failure of another
-        # self.set_input_defaults('OD_TOfail.Fn_DES', 0000.0, units='lbf') # Example - Replace with your calculation
-        # self.add_constraint('OD_TOfail.perf.Fn', lower=30000.0)  # Minimum thrust constraint (example value)
 
         # # Takeoff (all engines operating)
         # self.set_input_defaults('OD_TO.fc.MN', 0.18)
         # self.set_input_defaults('OD_TO.fc.alt', 0., units='ft')
         # self.set_input_defaults('OD_TO.fc.dTs', 0., units='degR')
         # self.set_input_defaults('OD_TO.T4_MAX', 1850., units='degK')
-        # # self.set_input_defaults('OD_TO.Fn_DES', 25000.0, units='lbf')
-        # # self.add_constraint('OD_TO.perf.Fn', lower=40000.0)  # Minimum thrust constraint (example value)
 
         # Top-of-climb
         # self.set_input_defaults('OD_TOC.fc.MN', 0.7)
         # self.set_input_defaults('OD_TOC.fc.alt', 30000., units='ft') # Example climb altitude
         # self.set_input_defaults('OD_TOC.fc.dTs', 0., units='degR')
         # self.set_input_defaults('OD_TOC.T4_MAX', 1700., units='degK') # Reduce TET slightly from takeoff
-        # # self.set_input_defaults('OD_TOC.Fn_DES', 30000.0, units='lbf')
 
         # # Landing
         # self.set_input_defaults('OD_LDG.fc.MN', 0.2)
@@ -415,7 +415,6 @@ class MPhbtf(pyc.MPCycle):
         super().setup()
 
 
-
 if __name__ == "__main__":
 
     import time
@@ -426,29 +425,35 @@ if __name__ == "__main__":
     # 1) Set up an optimizer driver
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options["optimizer"] = "SLSQP"
-    prob.driver.options["maxiter"] = 50
+    prob.driver.options["maxiter"] = 20
     prob.driver.options["debug_print"] = ["desvars", "nl_cons", "objs"]
-    # prob.driver.opt_settings={'Major step limit': 0.05}
     # Optionally prob.driver.opt_settings = { ... } for advanced control
+
+    # for component in ['DESIGN.core_nozz.ideal_flow', 'DESIGN.core_nozz.staticPs', 'DESIGN.lpt.out_stat', 'DESIGN.byp_bld.out_stat', 'DESIGN.duct13.out_stat', 'DESIGN.byp_nozz.ideal_flow']:
+    #     prob.model.set_input_defaults(f'{component}.nonlinear_solver.linesearch.options["print_bound_enforce"]', True)
 
     # 2) Add design variables
     # Example: HPC PR, fan PR, and T4 at design
     # HPC PR is often the product lpc.PR * hpc.PR, or you can do them individually.
     # We'll assume HPC has a single PR.  If your code is separated, adapt accordingly.
-    # prob.model.add_design_var("DESIGN.hpc.PR", lower=6.0, upper=15.0)
-    # prob.model.add_design_var("DESIGN.fan.PR", lower=1.3, upper=1.8)
-    # prob.model.add_design_var('DESIGN.lpc.PR', lower=1.0, upper=4.0)
-    # prob.model.add_design_var('DESIGN.splitter.BPR', lower=3.0, upper=12.0)
-    prob.model.add_design_var("DESIGN.fan.PR", lower=1.3, upper=1.8)  # Fan pressure ratio
-    prob.model.add_design_var("DESIGN.splitter.BPR", lower=3.0, upper=12.0)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
+    prob.model.add_design_var("DESIGN.hpc.PR", lower=7.0, upper=13.0, ref=9.5)
+    prob.model.add_design_var('DESIGN.lpc.PR', lower=2.5, upper=4.0)
+    prob.model.add_design_var("DESIGN.fan.PR", lower=1.4, upper=1.8)  # Fan pressure ratio
+    # prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
 
-    prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.5)
+    prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.3, ref=0.6)
 
     # constraints
-    prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000., units='lbf', ref=32000)
-    prob.model.add_constraint("DESIGN.perf.Fn", lower=2500., units='lbf', ref=2600)
+    prob.model.add_constraint("OD_TOfail.perf.Fn", lower=40000., units='lbf', ref=45000)
+    # prob.model.add_constraint("DESIGN.perf.Fn", lower=5000., units='lbf', ref=5000)
     prob.model.add_constraint("DESIGN.balance.FAR", lower=0.015, upper=0.03, ref=0.025)
-    prob.model.add_constraint("DESIGN.fan_dia.FanDia", lower=75., upper=100., ref=80)
+    prob.model.add_constraint('DESIGN.fan_dia.FanDia', lower=70.0, upper=90, ref=80.0)
+
+    recorder = om.SqliteRecorder('N3_opt.sql')
+    prob.model.add_recorder(recorder)
+    prob.model.recording_options['record_inputs'] = True
+    prob.model.recording_options['record_outputs'] = True
+
     prob.setup()
 
     # velo ratio
@@ -458,10 +463,10 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.fc.alt', 28000., units='ft')
     prob.set_val('DESIGN.fc.MN', 0.74)
 
-    prob.set_val('DESIGN.fan.PR', 1.3)
-    prob.set_val('DESIGN.lpc.PR', 2.6)
-    prob.set_val('DESIGN.hpc.PR', 9.0)
-    prob.set_val('DESIGN.splitter.BPR', 6)
+    prob.set_val('DESIGN.fan.PR', 1.5)
+    prob.set_val('DESIGN.lpc.PR', 3)
+    prob.set_val('DESIGN.hpc.PR', 9.5)
+    prob.set_val('DESIGN.splitter.BPR', 5.9)
 
     prob.set_val('DESIGN.fan.eff', 0.8948)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
@@ -471,18 +476,15 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.lpt.eff', 0.8996)
 
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 2500.0, units='lbf')
-
+    prob.set_val('DESIGN.Fn_DES', 10000.0, units='lbf')
+    
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 900.
+    prob['DESIGN.balance.W'] = 800.
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
     prob['DESIGN.fc.balance.Tt'] = 440.0
-    
-    # prob.model.add_constraint('DESIGN.fan.Fl_O:stat:area', lower=4300, upper=5000, units='inch**2') # Example values
-    # prob.set_val('DESIGN.fan.Fl_O:stat:area', 4400, units='inch**2')
 
     # --- Off-Design Points ---
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
@@ -490,31 +492,6 @@ if __name__ == "__main__":
     prob.set_val('OD_TOfail.fc.alt', 0.0, units='ft')
     prob.set_val('OD_TOfail.fc.dTs', 0.0, units='degR')
     prob.set_val('OD_TOfail.T4_MAX', 1850., units='degK')
-    # prob.set_val('OD_TOfail.Fn_DES', 66000.0, units='lbf') # Example - Replace with your calculation
-    # prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000.0, units='lbf')  # must be >= 22000
-    # prob.model.add_constraint("OD_TOfail.Fn_DES", lower=30000.0, units='lbf')  # must be >= 22000
-
-    # Takeoff (all engines operating)
-    # prob.set_val('OD_TO.fc.MN', 0.18)
-    # prob.set_val('OD_TO.fc.alt', 0.0, units='ft')
-    # prob.set_val('OD_TO.fc.dTs', 0.0, units='degR')
-    # prob.set_val('OD_TO.T4_MAX', 1850., units='degK')
-    # # prob.set_val('OD_TO.Fn_DES', 50000.0, units='lbf') # Example - Replace with your calculation
-    # prob.model.add_constraint("OD_TO.Fn_DES", lower=20000.0, units='lbf')  # must be >= 22000
-
-    # Top-of-climb
-    # prob.set_val('OD_TOC.fc.MN', 0.7)
-    # prob.set_val('OD_TOC.fc.alt', 30000., units='ft')
-    # prob.set_val('OD_TOC.fc.dTs', 0.0, units='degR')
-    # prob.set_val('OD_TOC.T4_MAX', 1700., units='degK')
-    # # prob.set_val('OD_TOC.Fn_DES', 30000.0, units='lbf') # Example - Replace with your calculation
-
-    # # Landing
-    # prob.set_val('OD_LDG.fc.MN', 0.2)
-    # prob.set_val('OD_LDG.fc.alt', 0.0, units='ft')
-    # prob.set_val('OD_LDG.fc.dTs', 0.0, units='degR')
-    # prob.set_val('OD_LDG.T4_MAX', 1600., units='degK')
-    # # prob.set_val('OD_LDG.Fn_DES', 5000.0, units='lbf') # Example - Replace with your calculation
 
     for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
@@ -534,23 +511,16 @@ if __name__ == "__main__":
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
-    viewer_file = open('hbtf_view.out', 'w')
     prob.run_driver()
-    
-    print("DESIGN Point")
-    viewer(prob, 'DESIGN', file=viewer_file)
 
-    print("OD_TOfail Point")
-    viewer(prob, 'OD_TOfail', file=viewer_file)
-
-    # print("OD_TO Point")
-    # viewer(prob, 'OD_TO', file=viewer_file)
-
-    # print("OD_TOC Point")
-    # viewer(prob, 'OD_TOC', file=viewer_file)
-
-    # print("OD_LDG Point")
-    # viewer(prob, 'OD_LDG', file=viewer_file)
+    # file
+    date_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
+    # create file:
+    import os
+    os.makedirs('output_data', exist_ok=True)
+    viewer_file = open(f'output_data/hbtf2_{date_time}.out', 'w')
+    for pt in ['DESIGN']+prob.model.od_pts:
+        viewer(prob, pt, file=viewer_file)
 
     print()
     print("Run time", time.time() - st)
