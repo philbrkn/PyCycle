@@ -10,4 +10,4 @@ def convert_fan_area_to_diameter(area, hub_tip=0.3125):
 
 
 if __name__ == "__main__":
-    print(convert_fan_area_to_diameter(5336.7))
+    print(convert_fan_area_to_diameter(5462))

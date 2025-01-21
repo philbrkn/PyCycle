@@ -380,7 +380,7 @@ class MPhbtf(pyc.MPCycle):
         # Single-engine failure during takeoff
         self.set_input_defaults('OD_TOfail.fc.MN', 0.18)
         self.set_input_defaults('OD_TOfail.fc.alt', 0., units='ft')
-        self.set_input_defaults('OD_TOfail.fc.dTs', 0., units='degR') # Standard day
+        self.set_input_defaults('OD_TOfail.fc.dTs', 27., units='degR') # Standard day
         self.set_input_defaults('OD_TOfail.T4_MAX', 1850., units='degK') # Allow higher TET for takeoff, based on your notes
         # Calculate thrust required for one engine to meet STOL performance after failure of another
         # self.set_input_defaults('OD_TOfail.Fn_DES', 0000.0, units='lbf') # Example - Replace with your calculation

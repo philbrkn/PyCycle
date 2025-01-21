@@ -436,9 +436,9 @@ if __name__ == "__main__":
     # Example: HPC PR, fan PR, and T4 at design
     # HPC PR is often the product lpc.PR * hpc.PR, or you can do them individually.
     # We'll assume HPC has a single PR.  If your code is separated, adapt accordingly.
-    prob.model.add_design_var("DESIGN.hpc.PR", lower=7.0, upper=13.0, ref=9.5)
-    prob.model.add_design_var('DESIGN.lpc.PR', lower=2.5, upper=4.0)
-    prob.model.add_design_var("DESIGN.fan.PR", lower=1.4, upper=1.8)  # Fan pressure ratio
+    prob.model.add_design_var("DESIGN.hpc.PR", lower=7.0, upper=15.0, ref=9.5)
+    prob.model.add_design_var('DESIGN.lpc.PR', lower=2.3, upper=4.0)
+    prob.model.add_design_var("DESIGN.fan.PR", lower=1.2, upper=1.7)  # Fan pressure ratio
     # prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
 
     prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.3, ref=0.6)
@@ -460,29 +460,34 @@ if __name__ == "__main__":
     # prob.set_val('DESIGN.vel_ratio_calc.vel_ratio', 1.2)
     # prob.model.add_constraint('DESIGN.vel_ratio_calc.vel_ratio', lower=1.1, upper=1.3)
 
+
     prob.set_val('DESIGN.fc.alt', 28000., units='ft')
     prob.set_val('DESIGN.fc.MN', 0.74)
 
-    prob.set_val('DESIGN.fan.PR', 1.5)
-    prob.set_val('DESIGN.lpc.PR', 3)
-    prob.set_val('DESIGN.hpc.PR', 9.5)
+    prob.set_val('DESIGN.fan.PR', 1.35)
+    prob.set_val('DESIGN.lpc.PR', 2.7)
+    prob.set_val('DESIGN.hpc.PR', 9)
     prob.set_val('DESIGN.splitter.BPR', 5.9)
 
-    prob.set_val('DESIGN.fan.eff', 0.8948)
+    prob.set_val('DESIGN.fan.eff', 0.9)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
     prob.set_val('DESIGN.hpc.eff', 0.907)
 
-    prob.set_val('DESIGN.hpt.eff', 0.8888)
-    prob.set_val('DESIGN.lpt.eff', 0.8996)
+    prob.set_val('DESIGN.hpt.eff', 0.9)
+    prob.set_val('DESIGN.lpt.eff', 0.9)
 
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 10000.0, units='lbf')
-    
+    prob.set_val('DESIGN.Fn_DES', 12000.0, units='lbf')
+
+    # THESE CHANGE NOTHING FOR SOME REASON..
+    prob.set_val('DESIGN.LP_Nmech', 4000, units='rpm') 
+    prob.set_val('DESIGN.HP_Nmech', 14000, units='rpm')
+
     # Set initial guesses for balances
     prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 800.
+    prob['DESIGN.balance.W'] = 1500.
     prob['DESIGN.balance.lpt_PR'] = 4.0
-    prob['DESIGN.balance.hpt_PR'] = 6.0
+    prob['DESIGN.balance.hpt_PR'] = 10.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
     prob['DESIGN.fc.balance.Tt'] = 440.0
 
@@ -491,18 +496,18 @@ if __name__ == "__main__":
     prob.set_val('OD_TOfail.fc.MN', 0.18)
     prob.set_val('OD_TOfail.fc.alt', 0.0, units='ft')
     prob.set_val('OD_TOfail.fc.dTs', 0.0, units='degR')
-    prob.set_val('OD_TOfail.T4_MAX', 1850., units='degK')
+    prob.set_val('OD_TOfail.T4_MAX', 1900., units='degK')
 
     for pt in ['OD_TOfail']: #, 'OD_TO']: #, 'OD_TOC', 'OD_LDG']:
         # initial guesses
         prob[pt+'.balance.FAR'] = 0.03
-        prob[pt+'.balance.W'] = 1500
-        prob[pt+'.balance.BPR'] = 6
+        prob[pt+'.balance.W'] = 1400
+        prob[pt+'.balance.BPR'] = 5.3
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
-        prob[pt+'.hpt.PR'] = 3.
-        prob[pt+'.lpt.PR'] = 2.
-        prob[pt+'.fan.map.RlineMap'] = 2.0
+        prob[pt+'.hpt.PR'] = 10.
+        prob[pt+'.lpt.PR'] = 3.
+        prob[pt+'.fan.map.RlineMap'] = 2.02
         prob[pt+'.lpc.map.RlineMap'] = 2.0
         prob[pt+'.hpc.map.RlineMap'] = 2.0
 
