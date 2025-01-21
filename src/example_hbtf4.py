@@ -74,12 +74,12 @@ class HBTF(pyc.Cycle):
         self.add_subsystem('perf', pyc.Performance(num_nozzles=2, num_burners=1))
         
         # FAN AREA
-        # self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
-        #             area={'val':7000.0, 'units':'inch**2'},
-        #             hub_tip={'val':0.3125, 'units':None},
-        #             FanDia={'val':100.0, 'units':'inch'}))
-        # # Now use the explicit connect method to make connections -- connect(<from>, <to>)
-        # self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
+        self.add_subsystem('fan_dia', om.ExecComp('FanDia = 2.0*(area/(pi*(1.0-hub_tip**2.0)))**0.5',
+                    area={'val':7000.0, 'units':'inch**2'},
+                    hub_tip={'val':0.3125, 'units':None},
+                    FanDia={'val':100.0, 'units':'inch'}))
+        # Now use the explicit connect method to make connections -- connect(<from>, <to>)
+        self.connect('inlet.Fl_O:stat:area', 'fan_dia.area')
 
         # Define the velocity ratio equation: vel_ratio = Vcore / Vbypass
         # self.add_subsystem('vel_ratio_calc', om.ExecComp('vel_ratio = core_V / bypass_V',

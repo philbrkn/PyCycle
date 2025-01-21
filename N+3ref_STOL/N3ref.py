@@ -1,7 +1,7 @@
 import sys
 import numpy as np
-import os
 import time
+import os
 
 import openmdao.api as om
 
@@ -150,7 +150,7 @@ class N3(pyc.Cycle):
             self.connect('balance.hpt_eff', 'hpt.eff')
             self.connect('hpt.eff_poly', 'balance.lhs:hpt_eff')
 
-            balance.add_balance('lpt_eff', val=0.9401, units=None, eq_units=None)
+            balance.add_balance('lpt_eff', val=0.9501, units=None, eq_units=None)
             self.connect('balance.lpt_eff', 'lpt.eff')
             self.connect('lpt.eff_poly', 'balance.lhs:lpt_eff')
 
@@ -195,7 +195,7 @@ class N3(pyc.Cycle):
             self.connect('balance.W', 'fc.W')
             self.connect('core_nozz.Throat:stat:area', 'balance.lhs:W')
 
-            balance.add_balance('BPR', lower=15., upper=40.)
+            balance.add_balance('BPR', lower=10., upper=40.)
             self.connect('balance.BPR', 'splitter.BPR')
             self.connect('fan.map.RlineMap', 'balance.lhs:BPR')
 
@@ -367,15 +367,15 @@ class MPN3(pyc.MPCycle):
         self.set_input_defaults('TOC.duct25.dPqP', 0.0150),
         self.set_input_defaults('TOC.balance.rhs:hpt_eff', 0.91),
         self.set_input_defaults('TOC.duct45.dPqP', 0.0050),
-        self.set_input_defaults('TOC.balance.rhs:lpt_eff', 0.92),
+        self.set_input_defaults('TOC.balance.rhs:lpt_eff', 0.93),
         self.set_input_defaults('TOC.duct5.dPqP', 0.0100),
         self.set_input_defaults('TOC.duct17.dPqP', 0.0150),
         self.set_input_defaults('TOC.Fan_Nmech', 2184.5, units='rpm'),
-        self.set_input_defaults('TOC.LP_Nmech', 6772.0, units='rpm'),
+        self.set_input_defaults('TOC.LP_Nmech', 7572.0, units='rpm'),
         self.set_input_defaults('TOC.HP_Nmech', 20871.0, units='rpm'),
 
         self.set_input_defaults('TOC.inlet.MN', 0.625),
-        self.set_input_defaults('TOC.fan.MN', 0.45)
+        self.set_input_defaults('TOC.fan.MN', 0.5)
         self.set_input_defaults('TOC.splitter.MN1', 0.45)
         self.set_input_defaults('TOC.splitter.MN2', 0.45)
         self.set_input_defaults('TOC.duct2.MN', 0.45),
@@ -414,9 +414,9 @@ class MPN3(pyc.MPCycle):
         self.pyc_add_cycle_param('byp_bld.bypBld:frac_W', 0.0),
 
         # OTHER POINTS (OFF-DESIGN)
-        self.od_pts = ['RTO','SLS','CRZ']
+        self.od_pts = ['RTO']  #,'SLS','CRZ']
         self.cooling = [True, False, False]
-        self.od_MNs = [0.18, 0.000001, 0.8]
+        self.od_MNs = [0.25, 0.000001, 0.8]
         self.od_alts = [0.0, 0.0, 35000.0]
         self.od_dTs = [27.0, 27.0, 0.0]
         self.od_BPRs = [1.75, 1.75, 1.9397]
@@ -432,7 +432,7 @@ class MPN3(pyc.MPCycle):
             self.set_input_defaults(pt+'.inlet.ram_recovery', val=self.od_recoveries[i])
 
         # Extra set input for Rolling Takeoff
-        self.set_input_defaults('RTO.balance.rhs:FAR', 22800.0, units='lbf'),
+        self.set_input_defaults('RTO.balance.rhs:FAR', 25000.0, units='lbf'),
 
         self.pyc_connect_des_od('fan.s_PR', 'fan.s_PR')
         self.pyc_connect_des_od('fan.s_Wc', 'fan.s_Wc')
@@ -486,11 +486,11 @@ class MPN3(pyc.MPCycle):
         self.connect('RTO.balance.hpt_chrg_cool_frac', 'TOC.bld3.bld_exit:frac_W')
         self.connect('RTO.balance.hpt_nochrg_cool_frac', 'TOC.bld3.bld_inlet:frac_W')
 
-        self.connect('RTO.balance.hpt_chrg_cool_frac', 'SLS.bld3.bld_exit:frac_W')
-        self.connect('RTO.balance.hpt_nochrg_cool_frac', 'SLS.bld3.bld_inlet:frac_W')
+        # self.connect('RTO.balance.hpt_chrg_cool_frac', 'SLS.bld3.bld_exit:frac_W')
+        # self.connect('RTO.balance.hpt_nochrg_cool_frac', 'SLS.bld3.bld_inlet:frac_W')
 
-        self.connect('RTO.balance.hpt_chrg_cool_frac', 'CRZ.bld3.bld_exit:frac_W')
-        self.connect('RTO.balance.hpt_nochrg_cool_frac', 'CRZ.bld3.bld_inlet:frac_W')
+        # self.connect('RTO.balance.hpt_chrg_cool_frac', 'CRZ.bld3.bld_exit:frac_W')
+        # self.connect('RTO.balance.hpt_nochrg_cool_frac', 'CRZ.bld3.bld_inlet:frac_W')
 
         self.add_subsystem('T4_ratio',
                              om.ExecComp('TOC_T4 = RTO_T4*TR',
@@ -498,7 +498,7 @@ class MPN3(pyc.MPCycle):
                                          TOC_T4={'val': 3150.0, 'units':'degR'},
                                          TR={'val': 0.926470588, 'units': None}), promotes_inputs=['RTO_T4',])
         self.connect('T4_ratio.TOC_T4', 'TOC.balance.rhs:FAR')
-        initial_order = ['T4_ratio', 'TOC', 'RTO', 'SLS', 'CRZ']
+        initial_order = ['T4_ratio', 'TOC', 'RTO']  #, 'SLS', 'CRZ']
         self.set_order(self.options['order_start'] + initial_order + self.options['order_add'])
 
         newton = self.nonlinear_solver = om.NewtonSolver()
@@ -539,9 +539,8 @@ def N3ref_model():
     prob.model.add_objective('TOC.perf.TSFC')
 
     # to add the constraint to the model
-    prob.model.add_constraint('TOC.fan_dia.FanDia', upper=100.0, ref=800.0)
-    prob.model.add_constraint('RTO.perf.Fn', lower=50000., ref=40000)
-    
+    prob.model.add_constraint('TOC.fan_dia.FanDia', upper=100.0, ref=100.0)
+
     return(prob)
 
 if __name__ == "__main__":
@@ -554,16 +553,16 @@ if __name__ == "__main__":
 
     # Define the design point
     prob.set_val('TOC.fc.W', 820.44097898, units='lbm/s')
-    prob.set_val('TOC.splitter.BPR', 23.94514401),
+    prob.set_val('TOC.splitter.BPR', 20.94514401),
     prob.set_val('TOC.balance.rhs:hpc_PR', 53.6332)
 
     # Set up the specific cycle parameters
-    prob.set_val('fan:PRdes', 1.300),
-    prob.set_val('lpc:PRdes', 3.000),
+    prob.set_val('fan:PRdes', 1.400),
+    prob.set_val('lpc:PRdes', 3.100),
     prob.set_val('T4_ratio.TR', 0.926470588)
     prob.set_val('RTO_T4', 3400.0, units='degR')
-    prob.set_val('SLS.balance.rhs:FAR', 28620.84, units='lbf')
-    prob.set_val('CRZ.balance.rhs:FAR', 5510.72833567, units='lbf')
+    # prob.set_val('SLS.balance.rhs:FAR', 28620.84, units='lbf')
+    # prob.set_val('CRZ.balance.rhs:FAR', 5510.72833567, units='lbf')
     prob.set_val('RTO.hpt_cooling.x_factor', 0.9)
 
     # Set initial guesses for balances
@@ -607,7 +606,7 @@ if __name__ == "__main__":
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
     prob.run_model()
-    
+
     # file
     date_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
     # create file:

@@ -2,6 +2,7 @@ import numpy as np
 import time
 import pickle
 from pprint import pprint
+import os
 
 import openmdao.api as om
 import pycycle.api as pyc
@@ -54,6 +55,7 @@ def N3_MDP_Opt_model():
     # to add the constraint to the model
     prob.model.add_constraint('TOC.fan_dia.FanDia', upper=100.0, ref=100.0)
     prob.model.add_constraint('TOC.perf.Fn', lower=5800.0, ref=6000.0)
+    prob.model.add_constraint('RTO.perf.Fn', lower=45000.0, ref=40000.0)
 
     prob.model.set_input_defaults('RTO_T4', 3400.0, units='degR')
 
@@ -126,8 +128,14 @@ if __name__ == "__main__":
     prob.set_solver_print(level=2, depth=1)
     prob.run_driver()
 
+  
+    # file
+    date_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
+    # create file:
+    os.makedirs('output_data', exist_ok=True)
+    viewer_file = open(f'output_data/n3_opt_{date_time}.out', 'w')
     for pt in ['TOC']+prob.model.od_pts:
-        viewer(prob, pt)
+        viewer(prob, pt, file=viewer_file)
 
     print()
     print('Diameter', prob['TOC.fan_dia.FanDia'][0])
