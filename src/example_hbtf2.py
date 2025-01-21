@@ -436,9 +436,9 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.fc.alt', 28000., units='ft')
     prob.set_val('DESIGN.fc.MN', 0.74)
 
-    prob.set_val('DESIGN.fan.PR', 1.45)
+    prob.set_val('DESIGN.fan.PR', 1.35)
     prob.set_val('DESIGN.lpc.PR', 2.7)
-    prob.set_val('DESIGN.hpc.PR', 8.7)
+    prob.set_val('DESIGN.hpc.PR', 9)
     prob.set_val('DESIGN.splitter.BPR', 5.9)
 
     prob.set_val('DESIGN.fan.eff', 0.9)
@@ -459,7 +459,7 @@ if __name__ == "__main__":
     prob['DESIGN.balance.FAR'] = 0.030
     prob['DESIGN.balance.W'] = 1500
     prob['DESIGN.balance.lpt_PR'] = 4.0
-    prob['DESIGN.balance.hpt_PR'] = 6.0
+    prob['DESIGN.balance.hpt_PR'] = 10
     prob['DESIGN.fc.balance.Pt'] = 5.2
     prob['DESIGN.fc.balance.Tt'] = 440.0
     
@@ -505,7 +505,7 @@ if __name__ == "__main__":
         prob[pt+'.balance.BPR'] = 5.3
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
-        prob[pt+'.hpt.PR'] = 6.
+        prob[pt+'.hpt.PR'] = 10.
         prob[pt+'.lpt.PR'] = 3.
         prob[pt+'.fan.map.RlineMap'] = 2.02
         prob[pt+'.lpc.map.RlineMap'] = 2.0
