@@ -436,24 +436,28 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.fc.alt', 28000., units='ft')
     prob.set_val('DESIGN.fc.MN', 0.74)
 
-    prob.set_val('DESIGN.fan.PR', 1.4)
-    prob.set_val('DESIGN.lpc.PR', 2.5)
-    prob.set_val('DESIGN.hpc.PR', 8)
+    prob.set_val('DESIGN.fan.PR', 1.45)
+    prob.set_val('DESIGN.lpc.PR', 2.7)
+    prob.set_val('DESIGN.hpc.PR', 8.7)
     prob.set_val('DESIGN.splitter.BPR', 5.9)
 
-    prob.set_val('DESIGN.fan.eff', 0.8948)
+    prob.set_val('DESIGN.fan.eff', 0.9)
     prob.set_val('DESIGN.lpc.eff', 0.9243)
     prob.set_val('DESIGN.hpc.eff', 0.907)
 
-    prob.set_val('DESIGN.hpt.eff', 0.8888)
-    prob.set_val('DESIGN.lpt.eff', 0.8996)
+    prob.set_val('DESIGN.hpt.eff', 0.9)
+    prob.set_val('DESIGN.lpt.eff', 0.9)
 
     prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
-    prob.set_val('DESIGN.Fn_DES', 10000.0, units='lbf')
+    prob.set_val('DESIGN.Fn_DES', 12000.0, units='lbf')
 
+    # THESE CHANGE NOTHING FOR SOME REASON..
+    prob.set_val('DESIGN.LP_Nmech', 4000, units='rpm') 
+    prob.set_val('DESIGN.HP_Nmech', 14000, units='rpm')
+        
     # Set initial guesses for balances
-    prob['DESIGN.balance.FAR'] = 0.025
-    prob['DESIGN.balance.W'] = 800.
+    prob['DESIGN.balance.FAR'] = 0.030
+    prob['DESIGN.balance.W'] = 1500
     prob['DESIGN.balance.lpt_PR'] = 4.0
     prob['DESIGN.balance.hpt_PR'] = 6.0
     prob['DESIGN.fc.balance.Pt'] = 5.2
@@ -467,7 +471,7 @@ if __name__ == "__main__":
     prob.set_val('OD_TOfail.fc.MN', 0.18)
     prob.set_val('OD_TOfail.fc.alt', 0.0, units='ft')
     prob.set_val('OD_TOfail.fc.dTs', 0.0, units='degR')
-    prob.set_val('OD_TOfail.T4_MAX', 1850., units='degK')
+    prob.set_val('OD_TOfail.T4_MAX', 1900., units='degK')
     # prob.set_val('OD_TOfail.Fn_DES', 66000.0, units='lbf') # Example - Replace with your calculation
     # prob.model.add_constraint("OD_TOfail.perf.Fn", lower=30000.0, units='lbf')  # must be >= 22000
     # prob.model.add_constraint("OD_TOfail.Fn_DES", lower=30000.0, units='lbf')  # must be >= 22000
@@ -501,8 +505,8 @@ if __name__ == "__main__":
         prob[pt+'.balance.BPR'] = 5.3
         prob[pt+'.balance.lp_Nmech'] = 5000 
         prob[pt+'.balance.hp_Nmech'] = 15000 
-        prob[pt+'.hpt.PR'] = 3.
-        prob[pt+'.lpt.PR'] = 2.
+        prob[pt+'.hpt.PR'] = 6.
+        prob[pt+'.lpt.PR'] = 3.
         prob[pt+'.fan.map.RlineMap'] = 2.02
         prob[pt+'.lpc.map.RlineMap'] = 2.0
         prob[pt+'.hpc.map.RlineMap'] = 2.0
