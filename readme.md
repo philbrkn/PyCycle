@@ -1,3 +1,23 @@
+Fix thrust from equation in book. 
+
+
+
+make a ratio for lpt_pr / hpt_pr and set it less than 0 in the optimization. NVM THIS IS OK.
+pressure ratio too high. (set a constraint??). YES
+play with TET. maybe 1550k at takeoff 
+add er raatio
+- mixed flow???. DONT THINK SO.
+
+
+
+
+
+
+
+units:
+- pressure is psia
+- W (mfr) is (lbm/s)
+- A is square in 
 
 
 need to reformulate the balance problem

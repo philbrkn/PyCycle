@@ -605,7 +605,12 @@ if __name__ == "__main__":
     prob.set_solver_print(level=2, depth=1)
     prob.run_model()
 
+    # file
+    date_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
+    # create file:
+    import os
+    os.makedirs('output_data', exist_ok=True)
+    viewer_file = open(f'output_data/n3_ref_{date_time}.out', 'w')
     for pt in ['TOC']+prob.model.od_pts:
-        viewer(prob, pt)
-
+        viewer(prob, pt, file=viewer_file)
     print("time", time.time() - st)

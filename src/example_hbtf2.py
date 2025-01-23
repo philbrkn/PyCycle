@@ -448,7 +448,7 @@ if __name__ == "__main__":
     prob.set_val('DESIGN.hpt.eff', 0.9)
     prob.set_val('DESIGN.lpt.eff', 0.9)
 
-    prob.set_val('DESIGN.T4_MAX', 1600, units='degK')
+    prob.set_val('DESIGN.T4_MAX', 1550, units='degK')
     prob.set_val('DESIGN.Fn_DES', 12000.0, units='lbf')
 
     # THESE CHANGE NOTHING FOR SOME REASON..

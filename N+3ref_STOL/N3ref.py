@@ -354,7 +354,7 @@ class MPN3(pyc.MPCycle):
 
         # TOC POINT (DESIGN)
         self.pyc_add_pnt('TOC', N3(), promotes_inputs=[('fan.PR', 'fan:PRdes'), ('lpc.PR', 'lpc:PRdes'),
-                                                        ('opr_calc.FPR', 'fan:PRdes'), ('opr_calc.LPCPR', 'lpc:PRdes')])
+                                                       ('opr_calc.FPR', 'fan:PRdes'), ('opr_calc.LPCPR', 'lpc:PRdes')])
 
         # POINT 1: Top-of-climb (TOC)
         self.set_input_defaults('TOC.fc.alt', 30000., units='ft'),
