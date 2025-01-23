@@ -243,6 +243,10 @@ class HBTF(pyc.Cycle):
                 self.connect("balance.FAR", "burner.Fl_I:FAR")
                 self.connect("burner.Fl_O:tot:T", "balance.lhs:FAR")
                 self.promotes("balance", inputs=[("rhs:FAR", "T4_MAX")])
+            elif self.options['throttle_mode'] == 'percent_thrust':
+                balance.add_balance('FAR', val=0.017, lower=1e-4, eq_units='lbf', use_mult=True)
+                self.connect('balance.FAR', 'burner.Fl_I:FAR')
+                self.connect('perf.Fn', 'balance.lhs:FAR')
 
             balance.add_balance(
                 "W", units="lbm/s", lower=10.0, upper=2000.0, eq_units="inch**2"
@@ -712,11 +716,11 @@ if __name__ == "__main__":
     import os
 
     os.makedirs("output_data", exist_ok=True)
-    # viewer_file = open(f"output_data/hbtf2_{date_time}.out", "w")
-    # for pt in ["DESIGN"] + prob.model.od_pts:
-    #     viewer(prob, pt, file=viewer_file)
+    viewer_file = open(f"output_data/hbtf2_{date_time}.out", "w")
+    for pt in ["DESIGN"] + prob.model.od_pts:
+        viewer(prob, pt, file=viewer_file)
 
-    map_plots(prob, 'DESIGN')
+    # map_plots(prob, 'DESIGN')
 
     print()
     print("Run time", time.time() - st)
