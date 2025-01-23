@@ -15,9 +15,14 @@ add er raatio
 
 
 units:
+- tot: T: stagnation, Rankine, which is Kelvin * 1.8
+- Fn (thrust): lbf
 - pressure is psia
-- W (mfr) is (lbm/s)
-- A is square in 
+- W (mass flow rate) is (lbm/s)
+- A is "in**2"
+- V is "ft/s"
+
+- 
 
 
 need to reformulate the balance problem
