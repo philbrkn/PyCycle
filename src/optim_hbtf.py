@@ -7,6 +7,8 @@ import openmdao.api as om
 import pycycle.api as pyc
 
 from plotting import plot_turbine_maps
+from N3_HPT_map import HPTMap
+from N3_LPT_map import LPTMap
 
 
 class HBTF(pyc.Cycle):
@@ -613,6 +615,11 @@ if __name__ == "__main__":
     prob.model.add_recorder(recorder)
     prob.model.recording_options["record_inputs"] = True
     prob.model.recording_options["record_outputs"] = True
+    prob.model.recording_options["includes"] = [
+        "*",  # Record all available variables
+        "*.s_Wc", "*.s_PR", "*.s_eff", "*.s_Nc",  # Explicitly store these variables
+        "*.Wc", "*.map.scalars.PR", "*.map.scalars.eff", "*.Wp"
+    ]
 
     prob.setup()
 

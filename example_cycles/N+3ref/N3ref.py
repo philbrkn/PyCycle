@@ -547,6 +547,16 @@ if __name__ == "__main__":
 
     prob = N3ref_model()
 
+    recorder = om.SqliteRecorder("N3_opt.sql")
+    prob.model.add_recorder(recorder)
+    prob.model.recording_options["record_inputs"] = True
+    prob.model.recording_options["record_outputs"] = True
+    prob.model.recording_options["includes"] = [
+        "*",  # Record all available variables
+        "*.s_Wc", "*.s_PR", "*.s_eff", "*.s_Nc",  # Explicitly store these variables
+        "*.Wc", "*.map.scalars.PR", "*.map.scalars.eff", "*.Wp"
+    ]
+
     prob.setup()
 
     # Define the design point
