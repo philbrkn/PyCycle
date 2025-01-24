@@ -22,20 +22,24 @@ def plot_turbine_maps(case, element_names, eff_vals=np.linspace(0, 1, 11)):
             else:
                 raise ValueError(f"Unknown turbine type: {e_name}")
 
-            PRmap, NpMap = np.meshgrid(map_data.PRmap, map_data.NpMap, sparse=False)
+            # Ensure correct shape
+            PRmap, NpMap = np.meshgrid(map_data.PRmap, map_data.NpMap, indexing='ij')
+            alpha_idx = 0
+            # Extract slices for contour plotting
+            Wp_scaled = map_data.WpMap[alpha_idx].T * s_Wp
+            eff_scaled = map_data.effMap[alpha_idx].T * s_eff
+            PR_scaled = PRmap * s_PR
+            Np_scaled = NpMap * s_Np
 
             plt.figure(figsize=(11, 8))
-            alpha = 0
-
-            Nc = plt.contour(map_data.WpMap[alpha,:,:] * s_Wp, PRmap * s_PR, NpMap * s_Np, colors='k', levels=map_data.NpMap * s_Np)
-            plt.clabel(Nc, fontsize=9, inline=False)
-
-            eff = plt.contourf(map_data.WpMap[alpha,:,:] * s_Wp, PRmap * s_PR, map_data.effMap[alpha,:,:] * s_eff, levels=eff_vals)
-            plt.clabel(eff, fontsize=9, inline=False)
-            plt.colorbar(eff)
+            Nc_contours = plt.contour(Wp_scaled, PR_scaled, Np_scaled, colors='k', levels=np.unique(Np_scaled))
+            eff_contours = plt.contourf(Wp_scaled, PR_scaled, eff_scaled, levels=eff_vals, cmap='viridis')
+            plt.clabel(Nc_contours, fontsize=9, inline=False)
+            plt.clabel(eff_contours, fontsize=9, inline=False)
+            plt.colorbar(eff_contours)
 
             # Plot actual operating point if data exists
-            # plt.plot(case[f"{e_name}.Wp"], case[f"{e_name}.map.scalars.PR"][0], 'ko')
+            plt.plot(case[f"{e_name}.Wp"], case[f"{e_name}.map.scalars.PR"][0], 'ko')
 
             plt.xlabel("Wp, lbm/s")
             plt.ylabel("PR")

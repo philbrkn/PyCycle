@@ -475,11 +475,6 @@ class MPN3(pyc.MPCycle):
             self.pyc_connect_des_od('byp_bld.Fl_O:stat:area', 'byp_bld.area')
             self.pyc_connect_des_od('duct17.Fl_O:stat:area', 'duct17.area')
 
-        self.pyc_connect_des_od('duct2.s_dPqP', 'duct2.s_dPqP')
-        self.pyc_connect_des_od('duct25.s_dPqP', 'duct25.s_dPqP')
-        self.pyc_connect_des_od('duct45.s_dPqP', 'duct45.s_dPqP')
-        self.pyc_connect_des_od('duct5.s_dPqP', 'duct5.s_dPqP')
-        self.pyc_connect_des_od('duct17.s_dPqP', 'duct17.s_dPqP')
 
         self.connect('RTO.balance.hpt_chrg_cool_frac', 'TOC.bld3.bld_exit:frac_W')
         self.connect('RTO.balance.hpt_nochrg_cool_frac', 'TOC.bld3.bld_inlet:frac_W')

@@ -1,15 +1,29 @@
 Fix thrust from equation in book. 
 
 
-
 make a ratio for lpt_pr / hpt_pr and set it less than 0 in the optimization. NVM THIS IS OK.
 pressure ratio too high. (set a constraint??). YES
 play with TET. maybe 1550k at takeoff 
 add er raatio
 - mixed flow???. DONT THINK SO.
+- calculate thermal efficiency
+- make fan poly to fan eff?
+- add coolin?
 
-
-
+more thrust:
+--------------------------------------------------------------
+Design Vars
+{'DESIGN.balance.rhs:hpc_PR': array([35.67320561]),
+ 'DESIGN.splitter.BPR': array([4.]),
+ 'bal.rhs:DESIGN_BPR': array([1.60125162]),
+ 'fan:PRdes': array([1.85]),
+ 'lpc:PRdes': array([1.18481111])}
+Nonlinear constraints
+{'DESIGN.balance.FAR': array([0.02412288]),
+ 'DESIGN.fan_dia.FanDia': array([76.97464092]),
+ 'OD_TOfail.perf.Fn': array([50761.47049474])}
+Objectives
+{'DESIGN.perf.TSFC': array([0.61868884])}
 
 
 
@@ -21,8 +35,6 @@ units:
 - W (mass flow rate) is (lbm/s)
 - A is "in**2"
 - V is "ft/s"
-
-- 
 
 
 need to reformulate the balance problem

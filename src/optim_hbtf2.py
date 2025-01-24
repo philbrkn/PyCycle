@@ -573,7 +573,8 @@ if __name__ == "__main__":
 
     bal = prob.model.add_subsystem('bal', om.BalanceComp())
 
-    bal.add_balance('DESIGN_BPR', val=5.9281, units=None, eq_units=None)
+    # bal.add_balance('DESIGN_BPR', val=5.9281, units=None, eq_units=None)
+    bal.add_balance('DESIGN_BPR', units=None, eq_units=None)
     prob.model.connect('bal.DESIGN_BPR', 'DESIGN.splitter.BPR')
     prob.model.connect('DESIGN.ext_ratio.ER', 'bal.lhs:DESIGN_BPR')
 
@@ -601,11 +602,11 @@ if __name__ == "__main__":
     # Example: HPC PR, fan PR, and T4 at design
     # HPC PR is often the product lpc.PR * hpc.PR, or you can do them individually.
     # We'll assume HPC has a single PR.  If your code is separated, adapt accordingly.
-    prob.model.add_design_var('fan:PRdes', lower=1.20, upper=1.75)
-    prob.model.add_design_var('lpc:PRdes', lower=1.2, upper=4.0)
-    prob.model.add_design_var('DESIGN.balance.rhs:hpc_PR', lower=29.0, upper=35.0, ref0=29.0, ref=35.0)
-    prob.model.add_design_var('bal.rhs:DESIGN_BPR', lower=1.30, upper=1.6, ref0=1.30, ref=1.45)
-    # prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
+    prob.model.add_design_var('fan:PRdes', lower=1.20, upper=1.85)
+    prob.model.add_design_var('lpc:PRdes', lower=1.05, upper=4.0)
+    prob.model.add_design_var('DESIGN.balance.rhs:hpc_PR', lower=29.0, upper=40.0, ref0=29.0, ref=40.0)
+    prob.model.add_design_var('bal.rhs:DESIGN_BPR', lower=1.30, upper=1.7, ref0=1.30, ref=1.45)
+    prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
 
     prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.6)
 
@@ -665,7 +666,7 @@ if __name__ == "__main__":
     prob.set_val("OD_TOfail.fc.MN", 0.18)
     prob.set_val("OD_TOfail.fc.alt", 0.0, units="ft")
     prob.set_val("OD_TOfail.fc.dTs", 0.0, units="degR")
-    prob.set_val("OD_TOfail.T4_MAX", 1900.0, units="degK")
+    prob.set_val("OD_TOfail.T4_MAX", 1850.0, units="degK")
 
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
     prob.set_val("OD_TOC.fc.MN", 0.74)
@@ -677,6 +678,7 @@ if __name__ == "__main__":
     prob.set_val("OD_SLS.fc.alt", 0.0, units="ft")
     prob.set_val("OD_SLS.fc.dTs", 0.0, units="degR")
 
+    # correspond to: ['OD_TOfail', 'OD_TOC', 'OD_SLS']
     FAR_guess = [0.03081, 0.02510, 0.03041]
     W_guess = [1503.771, 802.79, 1300.]
     BPR_guess = [5.431, 5.8, 5.3]
@@ -706,8 +708,8 @@ if __name__ == "__main__":
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
-    prob.run_model()
-    # prob.run_driver()
+    # prob.run_model()
+    prob.run_driver()
 
     # file
     date_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())

@@ -43,35 +43,21 @@ def convert_dia_to_fan_area(dia, units='m', hub_tip=0.3125):
         raise ValueError('units must be "m" or "in"')
 
 
-def calculate_weight_from_thrust():
-    Srunway = 450 # takeoff distance, meters
-    Vto = 61.8  # m/s 
-    mass = 353e3 # kg
-    Cd = 0.03 # ASSUMING THIS, JUSTIFY
-    S = 200 #  wing area, m^2
-    mu = 0.03  # friction coefficient , JUSTIFY
-
-    accel = Vto**2/(2*Srunway)
-    Fnet = mass * accel
-    # T = Fnet + D + Fr
-    D = 0.5* 1.225* Vto**2 * Cd * S
-    Fr = mu * mass * 9.81
-    T = Fnet + D + Fr
-    # convert Newtons to lbf
-    Tlbf = T * 0.224809
-    return Tlbf/4
-
-
+def convert_tsfc_to_kgNs():
+    tsfc = 0.56091148  # lbm/hr/lbf
+    # tsfc= 0.339
+    # convert to kg/s/N
+    tsfc = tsfc / 2.20462 / 3600 * 0.224809
+    return tsfc
+    
 if __name__ == "__main__":
-    print(calculate_weight_from_thrust(), " lbf per engine at takeoff")
-
+    print(convert_tsfc_to_kgNs())
     # print(calculate_cruise_thrust_req())
-    # area_from_optim = 4199.646
-    # fan_dia_from_optim = convert_fan_area_to_diameter(area_from_optim)
-    # pw_f117_area = convert_dia_to_fan_area(78.5, units='in')
-    # print(fan_dia_from_optim)
-    # print(f"change in area: {area_from_optim/ pw_f117_area - 1} ")
-    # print(convert_dia_to_fan_area(86, units='in'))
+    area_from_optim = 3406.845
+    fan_dia_from_optim = convert_fan_area_to_diameter(area_from_optim)
+    pw_f117_area = convert_dia_to_fan_area(78.5, units='in')
+    print(f"Fan diameter from optimization {fan_dia_from_optim}")
+    print(f"change in area: {area_from_optim/ pw_f117_area - 1} ")
     
     # inlet_area = 4199
     # inlet_diameter = math.sqrt(inlet_area / math.pi) * 2
