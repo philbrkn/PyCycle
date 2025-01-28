@@ -7,8 +7,6 @@ import openmdao.api as om
 import pycycle.api as pyc
 
 from plotting import plot_turbine_maps
-from N3_HPT_map import HPTMap
-from N3_LPT_map import LPTMap
 
 
 class HBTF(pyc.Cycle):
@@ -171,7 +169,7 @@ class HBTF(pyc.Cycle):
 
         balance = self.add_subsystem("balance", om.BalanceComp())
         if design:
-            balance.add_balance("W", units="lbm/s", eq_units="lbf", lower=650, val=690)
+            balance.add_balance("W", units="lbm/s", eq_units="lbf", lower=300, val=690)
             # Here balance.W is implicit state variable that is the OUTPUT of balance object
             # Connect the output of balance to the relevant input
             self.connect("balance.W", "fc.W")
@@ -215,7 +213,7 @@ class HBTF(pyc.Cycle):
             # self.connect('balance.BPR', 'splitter.BPR')
             # self.connect('byp_nozz.Throat:stat:area', 'balance.lhs:BPR')
 
-            balance.add_balance('hpc_PR', val=14.0, units=None, eq_units=None)
+            balance.add_balance('hpc_PR', val=16.0, units=None, eq_units=None)
             self.connect('balance.hpc_PR', ['hpc.PR', 'opr_calc.HPCPR'])
             # self.connect('perf.OPR', 'balance.lhs:hpc_PR')
             self.connect('opr_calc.OPR_simple', 'balance.lhs:hpc_PR')
@@ -463,27 +461,42 @@ class MPhbtf(pyc.MPCycle):
         self.set_input_defaults("DESIGN.fc.alt", 28000.0, units="ft")
         self.set_input_defaults("DESIGN.T4_MAX", 1600.0, units="degK")
 
+        # self.set_input_defaults("DESIGN.fc.MN", 0.74)
         # self.set_input_defaults("DESIGN.inlet.MN", 0.70)
         # self.set_input_defaults("DESIGN.fan.MN", 0.45)
+        # self.set_input_defaults("DESIGN.splitter.MN1", 0.32)
+        # self.set_input_defaults("DESIGN.splitter.MN2", 0.47)
+        # self.set_input_defaults("DESIGN.duct4.MN", 0.33)
+        # self.set_input_defaults("DESIGN.lpc.MN", 0.30)
+        # self.set_input_defaults("DESIGN.duct6.MN", 0.35)
+        # self.set_input_defaults("DESIGN.hpc.MN", 0.22)
+        # self.set_input_defaults("DESIGN.bld3.MN", 0.29)
+        # self.set_input_defaults("DESIGN.burner.MN", 0.1)
+        # self.set_input_defaults("DESIGN.hpt.MN", 0.35)
+        # self.set_input_defaults("DESIGN.duct11.MN", 0.3063)
+        # self.set_input_defaults("DESIGN.lpt.MN", 0.39)
+        # self.set_input_defaults("DESIGN.duct13.MN", 0.42)
+        # self.set_input_defaults("DESIGN.byp_bld.MN", 0.47)
+        # self.set_input_defaults("DESIGN.duct15.MN", 0.49)
         self.set_input_defaults("DESIGN.fc.MN", 0.74)
-        self.set_input_defaults("DESIGN.inlet.MN", 0.70)
-        self.set_input_defaults("DESIGN.fan.MN", 0.45)
-        self.set_input_defaults("DESIGN.splitter.MN1", 0.32)
-        self.set_input_defaults("DESIGN.splitter.MN2", 0.47)
-        self.set_input_defaults("DESIGN.duct4.MN", 0.33)
-        self.set_input_defaults("DESIGN.lpc.MN", 0.30)
-        self.set_input_defaults("DESIGN.duct6.MN", 0.35)
-        self.set_input_defaults("DESIGN.hpc.MN", 0.22)
-        self.set_input_defaults("DESIGN.bld3.MN", 0.29)
+        self.set_input_defaults("DESIGN.inlet.MN", 0.21)
+        self.set_input_defaults("DESIGN.fan.MN", 0.18)
+        self.set_input_defaults("DESIGN.splitter.MN1", 0.15)
+        self.set_input_defaults("DESIGN.splitter.MN2", 0.15)
+        self.set_input_defaults("DESIGN.duct4.MN", 0.16)
+        self.set_input_defaults("DESIGN.lpc.MN", 0.14)
+        self.set_input_defaults("DESIGN.duct6.MN", 0.17)
+        self.set_input_defaults("DESIGN.hpc.MN", 0.12)
+        self.set_input_defaults("DESIGN.bld3.MN", 0.16)
         self.set_input_defaults("DESIGN.burner.MN", 0.1)
-        self.set_input_defaults("DESIGN.hpt.MN", 0.35)
-        self.set_input_defaults("DESIGN.duct11.MN", 0.3063)
-        self.set_input_defaults("DESIGN.lpt.MN", 0.39)
-        self.set_input_defaults("DESIGN.duct13.MN", 0.42)
-        self.set_input_defaults("DESIGN.byp_bld.MN", 0.47)
-        self.set_input_defaults("DESIGN.duct15.MN", 0.49)
-        self.set_input_defaults("DESIGN.LP_Nmech", 4000, units="rpm")
-        self.set_input_defaults("DESIGN.HP_Nmech", 13000, units="rpm")
+        self.set_input_defaults("DESIGN.hpt.MN", 0.12)
+        self.set_input_defaults("DESIGN.duct11.MN", 0.11)
+        self.set_input_defaults("DESIGN.lpt.MN", 0.22)
+        self.set_input_defaults("DESIGN.duct13.MN", 0.24)
+        self.set_input_defaults("DESIGN.byp_bld.MN", 0.15)
+        self.set_input_defaults("DESIGN.duct15.MN", 0.20)
+        self.set_input_defaults("DESIGN.LP_Nmech", 13000, units="rpm")
+        self.set_input_defaults("DESIGN.HP_Nmech", 16000, units="rpm")
 
         # --- Set up bleed values -----
 
@@ -578,12 +591,12 @@ if __name__ == "__main__":
     prob.model.connect('bal.DESIGN_BPR', 'DESIGN.splitter.BPR')
     prob.model.connect('DESIGN.ext_ratio.ER', 'bal.lhs:DESIGN_BPR')
 
-    bal.add_balance('OD_TOC_Fn_target', val=12000, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2, ref0=10000.0, ref=12000.0)
+    bal.add_balance('OD_TOC_Fn_target', val=7000, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2, ref0=5900.0, ref=12000.0)
     prob.model.connect('bal.OD_TOC_Fn_target', 'OD_TOC.balance.rhs:FAR')
     prob.model.connect('DESIGN.perf.Fn', 'bal.lhs:OD_TOC_Fn_target')
     prob.model.connect('OD_TOC.perf.Fn','bal.rhs:OD_TOC_Fn_target')
 
-    bal.add_balance('OD_SLS_Fn_target', val=52000.0, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2553, ref0=50000.0, ref=55000.0)
+    bal.add_balance('OD_SLS_Fn_target', val=45000.0, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2553, ref0=40000.0, ref=55000.0)
     prob.model.connect('bal.OD_SLS_Fn_target', 'OD_SLS.balance.rhs:FAR')
     prob.model.connect('OD_TOfail.perf.Fn', 'bal.lhs:OD_SLS_Fn_target')
     prob.model.connect('OD_SLS.perf.Fn','bal.rhs:OD_SLS_Fn_target')
@@ -605,7 +618,7 @@ if __name__ == "__main__":
     prob.model.add_design_var('fan:PRdes', lower=1.20, upper=1.85)
     prob.model.add_design_var('lpc:PRdes', lower=1.05, upper=4.0)
     prob.model.add_design_var('DESIGN.balance.rhs:hpc_PR', lower=29.0, upper=40.0, ref0=29.0, ref=40.0)
-    prob.model.add_design_var('bal.rhs:DESIGN_BPR', lower=1.30, upper=1.7, ref0=1.30, ref=1.45)
+    # prob.model.add_design_var('bal.rhs:DESIGN_BPR', lower=1.30, upper=1.7, ref0=1.30, ref=1.45)
     prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
 
     prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.6)
@@ -632,10 +645,10 @@ if __name__ == "__main__":
 
     prob.set_val("DESIGN.fc.alt", 28000.0, units="ft")
     prob.set_val("DESIGN.fc.MN", 0.74)
-    prob.set_val("fan:PRdes", 1.75)
-    prob.set_val("lpc:PRdes", 1.2)
-    prob.set_val('DESIGN.balance.rhs:hpc_PR', 34.48)
-    prob.set_val('bal.rhs:DESIGN_BPR', 1.60)
+    prob.set_val("fan:PRdes", 1.8)
+    prob.set_val("lpc:PRdes", 1.3)
+    prob.set_val('DESIGN.balance.rhs:hpc_PR', 37.39)
+    prob.set_val('bal.rhs:DESIGN_BPR', 1.68)
     prob.set_val("DESIGN.splitter.BPR", 5.9)
     # prob.set_val("DESIGN.hpc.PR", 9)
 
@@ -647,20 +660,20 @@ if __name__ == "__main__":
     prob.set_val("DESIGN.lpt.eff", 0.9)
 
     prob.set_val("DESIGN.T4_MAX", 1600, units="degK")
-    prob.set_val("DESIGN.Fn_DES", 10000.0, units="lbf")
+    prob.set_val("DESIGN.Fn_DES", 6749.98, units="lbf")
 
     # THESE CHANGE NOTHING FOR SOME REASON..
-    prob.set_val("DESIGN.LP_Nmech", 5000, units="rpm")
-    prob.set_val("DESIGN.HP_Nmech", 13000, units="rpm")
+    prob.set_val("DESIGN.LP_Nmech", 13500, units="rpm")
+    prob.set_val("DESIGN.HP_Nmech", 16049, units="rpm")
 
     # Set initial guesses for balances
     prob["DESIGN.balance.FAR"] = 0.02424
-    prob["DESIGN.balance.W"] = 701.165
-    prob["DESIGN.balance.lpt_PR"] = 5.088
-    prob["DESIGN.balance.hpt_PR"] = 4.43
+    prob["DESIGN.balance.W"] = 400
+    prob["DESIGN.balance.lpt_PR"] = 4.910
+    prob["DESIGN.balance.hpt_PR"] = 3.829
     prob["DESIGN.fc.balance.Pt"] = 6.873
     prob["DESIGN.fc.balance.Tt"] = 464.798
-
+    
     # --- Off-Design Points ---
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
     prob.set_val("OD_TOfail.fc.MN", 0.18)
@@ -680,7 +693,7 @@ if __name__ == "__main__":
 
     # correspond to: ['OD_TOfail', 'OD_TOC', 'OD_SLS']
     FAR_guess = [0.03081, 0.02510, 0.03041]
-    W_guess = [1503.771, 802.79, 1300.]
+    W_guess = [1003.771, 802.79, 1100.]
     BPR_guess = [5.431, 5.8, 5.3]
     lp_Nmech_guess = [5977.580, 6054.5, 6567.9]
     hp_Nmech_guess = [14217, 15000, 15000.1]
@@ -708,8 +721,8 @@ if __name__ == "__main__":
     prob.set_solver_print(level=-1)
     prob.set_solver_print(level=2, depth=1)
 
-    # prob.run_model()
-    prob.run_driver()
+    prob.run_model()
+    # prob.run_driver()
 
     # file
     date_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
