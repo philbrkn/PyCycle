@@ -72,9 +72,9 @@ def calc_sa(Vstall, h_ob=50):
     return R * np.sin(theta)
 
 # Given Data
-# W_kg = 265352  # Maximum Takeoff Weight (kg)
-W_kg = 179169  # Short Takeoff and Landing Weight (kg)
-W_kg *= 0.86**3
+W_kg = 265352  # Maximum Takeoff Weight (kg)
+# W_kg = 179169  # Short Takeoff and Landing Weight (kg)
+# W_kg *= 0.86**3
 g = 9.81  # Gravity (m/s^2)
 rho = 1.225  # Air density at sea level (kg/m^3)
 S = 353  # Wing area (m^2)

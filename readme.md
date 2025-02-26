@@ -1,3 +1,5 @@
+problems with spool speed and Pressure at exit (set nozzle area).
+
 Fix thrust from equation in book. 
 
 

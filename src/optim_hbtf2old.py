@@ -169,7 +169,7 @@ class HBTF(pyc.Cycle):
 
         balance = self.add_subsystem("balance", om.BalanceComp())
         if design:
-            balance.add_balance("W", units="lbm/s", eq_units="lbf", lower=620, val=690)
+            balance.add_balance("W", units="lbm/s", eq_units="lbf", lower=650, val=690)
             # Here balance.W is implicit state variable that is the OUTPUT of balance object
             # Connect the output of balance to the relevant input
             self.connect("balance.W", "fc.W")
@@ -213,7 +213,7 @@ class HBTF(pyc.Cycle):
             # self.connect('balance.BPR', 'splitter.BPR')
             # self.connect('byp_nozz.Throat:stat:area', 'balance.lhs:BPR')
 
-            balance.add_balance('hpc_PR', val=16.0, units=None, eq_units=None)
+            balance.add_balance('hpc_PR', val=14.0, units=None, eq_units=None)
             self.connect('balance.hpc_PR', ['hpc.PR', 'opr_calc.HPCPR'])
             # self.connect('perf.OPR', 'balance.lhs:hpc_PR')
             self.connect('opr_calc.OPR_simple', 'balance.lhs:hpc_PR')
@@ -317,10 +317,10 @@ class HBTF(pyc.Cycle):
 
         # Specify solver settings:
         newton = self.nonlinear_solver = om.NewtonSolver()
-        newton.options["atol"] = 1e-6
+        newton.options["atol"] = 1e-3
 
         # set this very small, so it never activates and we rely on atol
-        newton.options["rtol"] = 1e-99
+        newton.options["rtol"] = 1e-3
         newton.options["iprint"] = 2
         newton.options["maxiter"] = 25
         newton.options["solve_subsystems"] = True
@@ -331,7 +331,8 @@ class HBTF(pyc.Cycle):
         ls.options["maxiter"] = 3
         ls.options["rho"] = 0.75
         ls.options["print_bound_enforce"] = False
-
+        newton.linesearch.options['iprint'] = -1  # ADD THIs
+        
         self.linear_solver = om.DirectSolver()
 
         super().setup()
@@ -556,6 +557,27 @@ class MPhbtf(pyc.MPCycle):
         self.pyc_connect_des_od("core_nozz.Throat:stat:area", "balance.rhs:W")
         self.pyc_connect_des_od("byp_nozz.Throat:stat:area", "balance.rhs:BPR")
 
+        # Specify solver settings:
+        # Specify solver settings:
+        newton = self.nonlinear_solver = om.NewtonSolver()
+        newton.options["atol"] = 1e-3
+
+        # set this very small, so it never activates and we rely on atol
+        newton.options["rtol"] = 1e-3
+        newton.options["iprint"] = 2
+        newton.options["maxiter"] = 25
+        newton.options["solve_subsystems"] = True
+        newton.options["max_sub_solves"] = 1000
+        newton.options["reraise_child_analysiserror"] = False
+        # ls = newton.linesearch = BoundsEnforceLS()
+        ls = newton.linesearch = om.ArmijoGoldsteinLS()
+        ls.options["maxiter"] = 3
+        ls.options["rho"] = 0.75
+        ls.options["print_bound_enforce"] = False
+        newton.linesearch.options['iprint'] = -1  # ADD THIs
+        
+        self.linear_solver = om.DirectSolver()
+
         super().setup()
 
 
@@ -576,21 +598,21 @@ if __name__ == "__main__":
     prob.model.connect('bal.DESIGN_BPR', 'DESIGN.splitter.BPR')
     prob.model.connect('DESIGN.ext_ratio.ER', 'bal.lhs:DESIGN_BPR')
 
-    bal.add_balance('OD_TOC_Fn_target', val=12000, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2, ref0=5900.0, ref=12000.0)
+    bal.add_balance('OD_TOC_Fn_target', val=12000, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2, ref0=10000.0, ref=12000.0)
     prob.model.connect('bal.OD_TOC_Fn_target', 'OD_TOC.balance.rhs:FAR')
     prob.model.connect('DESIGN.perf.Fn', 'bal.lhs:OD_TOC_Fn_target')
     prob.model.connect('OD_TOC.perf.Fn','bal.rhs:OD_TOC_Fn_target')
 
-    bal.add_balance('OD_SLS_Fn_target', val=50000.0, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2553, ref0=45000.0, ref=55000.0)
+    bal.add_balance('OD_SLS_Fn_target', val=52000.0, units='lbf', eq_units='lbf', use_mult=True, mult_val=1.2553, ref0=50000.0, ref=55000.0)
     prob.model.connect('bal.OD_SLS_Fn_target', 'OD_SLS.balance.rhs:FAR')
     prob.model.connect('OD_TOfail.perf.Fn', 'bal.lhs:OD_SLS_Fn_target')
     prob.model.connect('OD_SLS.perf.Fn','bal.rhs:OD_SLS_Fn_target')
 
     # 1) Set up an optimizer driver
-    prob.driver = om.ScipyOptimizeDriver()
-    prob.driver.options["optimizer"] = "SLSQP"
-    prob.driver.options["maxiter"] = 30
-    prob.driver.options["debug_print"] = ["desvars", "nl_cons", "objs"]
+    # prob.driver = om.ScipyOptimizeDriver()
+    # prob.driver.options["optimizer"] = "SLSQP"
+    # prob.driver.options["maxiter"] = 30
+    # prob.driver.options["debug_print"] = ["desvars", "nl_cons", "objs"]
     # Optionally prob.driver.opt_settings = { ... } for advanced control
 
     # for component in ['DESIGN.core_nozz.ideal_flow', 'DESIGN.core_nozz.staticPs', 'DESIGN.lpt.out_stat', 'DESIGN.byp_bld.out_stat', 'DESIGN.duct13.out_stat', 'DESIGN.byp_nozz.ideal_flow']:
@@ -600,40 +622,40 @@ if __name__ == "__main__":
     # Example: HPC PR, fan PR, and T4 at design
     # HPC PR is often the product lpc.PR * hpc.PR, or you can do them individually.
     # We'll assume HPC has a single PR.  If your code is separated, adapt accordingly.
-    prob.model.add_design_var('fan:PRdes', lower=1.20, upper=1.85)
-    prob.model.add_design_var('lpc:PRdes', lower=1.05, upper=4.0)
-    prob.model.add_design_var('DESIGN.balance.rhs:hpc_PR', lower=29.0, upper=40.0, ref0=29.0, ref=40.0)
+    # prob.model.add_design_var('fan:PRdes', lower=1.20, upper=1.85)
+    # prob.model.add_design_var('lpc:PRdes', lower=1.05, upper=4.0)
+    # prob.model.add_design_var('DESIGN.balance.rhs:hpc_PR', lower=29.0, upper=40.0, ref0=29.0, ref=40.0)
     # prob.model.add_design_var('bal.rhs:DESIGN_BPR', lower=1.30, upper=1.7, ref0=1.30, ref=1.45)
-    prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
+    # prob.model.add_design_var("DESIGN.splitter.BPR", lower=4.0, upper=7.0, ref=5.9)  # Bypass ratio    # prob.model.add_design_var("CRZ.T4_MAX", lower=2700.0, upper=3400.0)
 
-    prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.6)
+    # prob.model.add_objective("DESIGN.perf.TSFC", ref0=0.4, ref=0.6)
 
-    # constraints
-    prob.model.add_constraint(
-        "OD_TOfail.perf.Fn", lower=40000.0, units="lbf", ref=45000
-    )
-    # prob.model.add_constraint("DESIGN.perf.Fn", lower=5000., units='lbf', ref=5000)
-    prob.model.add_constraint("DESIGN.balance.FAR", lower=0.015, upper=0.03, ref=0.025)
-    prob.model.add_constraint("DESIGN.fan_dia.FanDia", lower=70.0, upper=86, ref0=70.0, ref=85.0)
+    # # constraints
+    # prob.model.add_constraint(
+    #     "OD_TOfail.perf.Fn", lower=40000.0, units="lbf", ref=45000
+    # )
+    # # prob.model.add_constraint("DESIGN.perf.Fn", lower=5000., units='lbf', ref=5000)
+    # prob.model.add_constraint("DESIGN.balance.FAR", lower=0.015, upper=0.03, ref=0.025)
+    # prob.model.add_constraint("DESIGN.fan_dia.FanDia", lower=70.0, upper=86, ref0=70.0, ref=85.0)
 
-    recorder = om.SqliteRecorder("N3_opt.sql")
-    prob.model.add_recorder(recorder)
-    prob.model.recording_options["record_inputs"] = True
-    prob.model.recording_options["record_outputs"] = True
-    prob.model.recording_options["includes"] = [
-        "*",  # Record all available variables
-        "*.s_Wc", "*.s_PR", "*.s_eff", "*.s_Nc",  # Explicitly store these variables
-        "*.Wc", "*.map.scalars.PR", "*.map.scalars.eff", "*.Wp"
-    ]
+    # recorder = om.SqliteRecorder("N3_opt.sql")
+    # prob.model.add_recorder(recorder)
+    # prob.model.recording_options["record_inputs"] = True
+    # prob.model.recording_options["record_outputs"] = True
+    # prob.model.recording_options["includes"] = [
+    #     "*",  # Record all available variables
+    #     "*.s_Wc", "*.s_PR", "*.s_eff", "*.s_Nc",  # Explicitly store these variables
+    #     "*.Wc", "*.map.scalars.PR", "*.map.scalars.eff", "*.Wp"
+    # ]
 
     prob.setup()
 
     prob.set_val("DESIGN.fc.alt", 28000.0, units="ft")
     prob.set_val("DESIGN.fc.MN", 0.74)
-    prob.set_val("fan:PRdes", 1.9)
+    prob.set_val("fan:PRdes", 1.75)
     prob.set_val("lpc:PRdes", 1.2)
-    prob.set_val('DESIGN.balance.rhs:hpc_PR', 37.39)
-    prob.set_val('bal.rhs:DESIGN_BPR', 1.68)
+    prob.set_val('DESIGN.balance.rhs:hpc_PR', 34.48)
+    prob.set_val('bal.rhs:DESIGN_BPR', 1.60)
     prob.set_val("DESIGN.splitter.BPR", 5.9)
     # prob.set_val("DESIGN.hpc.PR", 9)
 
@@ -645,20 +667,20 @@ if __name__ == "__main__":
     prob.set_val("DESIGN.lpt.eff", 0.9)
 
     prob.set_val("DESIGN.T4_MAX", 1600, units="degK")
-    prob.set_val("DESIGN.Fn_DES", 6749.98, units="lbf")
+    prob.set_val("DESIGN.Fn_DES", 10000.0, units="lbf")
 
     # THESE CHANGE NOTHING FOR SOME REASON..
-    prob.set_val("DESIGN.LP_Nmech", 13500, units="rpm")
-    prob.set_val("DESIGN.HP_Nmech", 16049, units="rpm")
+    prob.set_val("DESIGN.LP_Nmech", 5000, units="rpm")
+    prob.set_val("DESIGN.HP_Nmech", 13000, units="rpm")
 
     # Set initial guesses for balances
     prob["DESIGN.balance.FAR"] = 0.02424
-    prob["DESIGN.balance.W"] = 650
-    prob["DESIGN.balance.lpt_PR"] = 4.910
-    prob["DESIGN.balance.hpt_PR"] = 3.829
+    prob["DESIGN.balance.W"] = 701.165
+    prob["DESIGN.balance.lpt_PR"] = 5.088
+    prob["DESIGN.balance.hpt_PR"] = 4.43
     prob["DESIGN.fc.balance.Pt"] = 6.873
     prob["DESIGN.fc.balance.Tt"] = 464.798
-    
+
     # --- Off-Design Points ---
     # (Set values for OD_TOfail, OD_TO, OD_TOC, OD_LDG as described above)
     prob.set_val("OD_TOfail.fc.MN", 0.18)
